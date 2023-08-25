@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VINA_KERNEL_H
+#define VINA_KERNEL_H
 
 #include <stdexcept>
 template <typename T>
@@ -199,3 +200,5 @@ typedef struct {
 	output_type_cuda_t container[MAX_CONTAINER_SIZE_EVERY_WI];
 	int current_size;
 }output_container_cuda_t;
+
+#endif

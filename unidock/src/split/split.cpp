@@ -34,11 +34,7 @@
 
 #include "file.h"
 #include "parse_error.h"
-
-path make_path(const std::string& str) {
-    boost::filesystem::path p(str);
-	return p;
-}
+#include "utils.h"
 
 std::string default_prefix(const std::string& input_name, const std::string& add) {
 	std::string tmp = input_name;
@@ -133,7 +129,7 @@ void write_multimodel_pdbqt(const models& m, const std::string& ligand_prefix, c
 int main(int argc, char* argv[]) {
 	using namespace boost::program_options;
 	const bool advanced = false;
-	const std::string git_version = VERSION;
+	const std::string git_version = UNIDOCK_VERSION;
 	const std::string version_string = "AutoDock Vina PDBQT Split " + git_version;
 
 	const std::string error_message = "\n\n\

@@ -88,7 +88,7 @@ int predict_peak_memory(int batch_size, int exhaustiveness, int all_atom2_number
 
 int main(int argc, char* argv[]) {
 	using namespace boost::program_options;
-	const std::string git_version = VERSION;
+	const std::string git_version = UNIDOCK_VERSION;
 	const std::string version_string = "Uni-Dock " + git_version;
 	const std::string error_message = "\n\n\
 Please report bugs through the Issue Tracker on GitHub \n\
