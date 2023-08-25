@@ -33,13 +33,32 @@ if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
   )
 endif()
 
-add_compile_definitions(UNIDOCK_VERSION="v${PROJECT_VERSION}")
-
 find_package(OpenMP REQUIRED) # OpenMP only required in main.cpp
 find_package(Boost 1.72 REQUIRED COMPONENTS system thread serialization
                                             filesystem program_options timer)
 
 # set boost properties
 set(Boost_USE_STATIC_LIBS ${UNIDOCK_LINK_STATIC})
+
+# Get current version from git
+find_package(Git)
+if(GIT_EXECUTABLE)
+  # Generate a git-describe version string from Git repository tags
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --dirty
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_DESCRIBE_VERSION
+    RESULT_VARIABLE GIT_DESCRIBE_ERROR_CODE
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(NOT GIT_DESCRIBE_ERROR_CODE)
+    set(UNIDOCK_GIT_VERSION ${GIT_DESCRIBE_VERSION})
+  endif()
+endif()
+
+if(UNIDOCK_GIT_VERSION)
+  add_compile_definitions(UNIDOCK_VERSION="${UNIDOCK_GIT_VERSION}")
+else()
+  add_compile_definitions(UNIDOCK_VERSION="v${PROJECT_VERSION}")
+endif()
 
 add_subdirectory(src)
