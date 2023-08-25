@@ -22,7 +22,7 @@ add_library(
   quaternion.cpp
   random.cpp
   utils.cpp
-  vina.cpp
-  precalculate.h)
+  vina.cpp)
 
-target_include_directories(${PROJECT_NAME} PUBLIC .)
+target_include_directories(${PROJECT_NAME}
+                           PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

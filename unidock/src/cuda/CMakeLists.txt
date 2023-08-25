@@ -7,5 +7,6 @@ set(UNIDOCK_CUDA_LIB
 
 add_library(${PROJECT_NAME} OBJECT monte_carlo.cu precalculate.cu)
 
-target_include_directories(${PROJECT_NAME} PUBLIC .)
+target_include_directories(${PROJECT_NAME}
+                           PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${UNIDOCK_MAIN_LIB})
