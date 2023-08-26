@@ -28,35 +28,53 @@ Uni-Dock supports NVIDIA GPUs on Linux platform.
 
 ### Building from source
 
-1. Install dependencies
+#### 1. Clone GitHub repo or retrieve source code from release page
+```bash
+git clone https://github.com/dptech-corp/Uni-Dock
+```
+
+#### 2. Install dependencies
 
 - Boost >= 1.72
 
-```bash
-sudo apt install libboost-system-dev libboost-thread-dev libboost-serialization-dev libboost-filesystem-dev libboost-program-options-dev libboost-timer-dev
-```
+  If your machine's os is **ubuntu** and you have the access of the package manager, you can install the required boost dependecies by the following command.
+  ```bash
+  sudo apt install libboost-system-dev libboost-thread-dev libboost-serialization-dev libboost-filesystem-dev libboost-program-options-dev libboost-timer-dev
+  ```
 
-Alternatively, install from [boost source codes](https://www.boost.org/users/download/) or from [anaconda](https://anaconda.org/anaconda/libboost) with `conda install -c anaconda libboost`
+  Alternatively, if for some results you cannot install the `boost` with package manager, you can set `UNIDOCK_USE_FETCHCONTENT` to `ON` according to the instruction in step 3. It will automatically download boost's source and build it by this means. 
 
-- CUDA toolkit: Please refer to the [installation tutorial](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html) provided by nvidia.
+- CUDA toolkit
 
-2. Clone GitHub repo or retrieve source code from release page
+  Please refer to the [installation tutorial](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html) provided by nvidia.
 
-3. Build Uni-Dock using CMake:
 
+#### 3. Build Uni-Dock using CMake:
+
+Configure Uni-Dock.
 ```bash
 cmake -B build
-cmake --build build -j4
 ```
-
-Or build with Makefile:
+Or configure Uni-Dock with `UNIDOCK_USE_FETCHCONTENT` on.
 ```bash
-cd ./build/linux/release
-make clean
-make -j 4
+cmake -B build -DUNIDOCK_USE_FETCHCONTENT=ON
+```
+Build Uni-Dock.
+```bash
+cmake --build build -j
 ```
 
-Add the build directory to your `PATH` environment variable.
+#### 4. Install Uni-Dock
+
+Install `unidock` binary to /usr/local/bin
+```bash
+cmake --install build
+```
+Alternatively, you can install `unidock` binary to the path you specified.
+```bash
+# Notice: this command will install the binary to /path/to/unidock/bin/unidock
+cmake --install build --prefix /path/to/unidock
+```
 
 ### Using binary
 
