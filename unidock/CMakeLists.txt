@@ -40,7 +40,8 @@ find_package(Boost 1.72 REQUIRED COMPONENTS system thread serialization
 # set boost properties
 set(Boost_USE_STATIC_LIBS ${UNIDOCK_LINK_STATIC})
 
-# Get current version from git
+# Get current version from git. If the git command is unavailable or
+# git-describe returns error, use the version from CMakeLists.txt
 find_package(Git)
 if(GIT_EXECUTABLE)
   # Generate a git-describe version string from Git repository tags
@@ -56,7 +57,7 @@ if(GIT_EXECUTABLE)
 endif()
 
 if(UNIDOCK_GIT_VERSION)
-  add_compile_definitions(UNIDOCK_VERSION="${UNIDOCK_GIT_VERSION}")
+  add_compile_definitions(UNIDOCK_VERSION="v${UNIDOCK_GIT_VERSION}")
 else()
   add_compile_definitions(UNIDOCK_VERSION="v${PROJECT_VERSION}")
 endif()
