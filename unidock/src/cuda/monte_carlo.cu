@@ -1265,8 +1265,6 @@ void kernel(	m_cuda_t*			m_cuda_global,
 
 /* Below based on monte-carlo.cpp */
 
-// #ifdef ENABLE_CUDA
-
 std::vector<output_type> monte_carlo::cuda_to_vina(output_type_cuda_t results_ptr[], int thread) const {
 	// DEBUG_PRINTF("entering cuda_to_vina\n");
 	std::vector<output_type> results_vina;
@@ -1845,5 +1843,3 @@ void monte_carlo::operator()(model& m, output_container& out, const precalculate
 
 
 /* Above based on monte-carlo.cpp */
-
-// #endif
