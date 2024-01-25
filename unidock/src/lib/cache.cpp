@@ -631,6 +631,19 @@ void cache::populate(const model& m, const precalculate& p, const szv& atom_type
                     DEBUG_PRINTF("bias type=%d x=%d y=%d z=%d\n", bias->type, x, y, z);
                     switch (bias->type) {
                         case bias_element::itype::don: {  // HD
+                            fl dE = bias->vset * exp(-rb2 / bias->r / bias->r);
+                            if (dE >= -0.01) break;
+                            // std::cout << "dE=" << dE << std::endl;
+                            // choose atom constants, XS
+                            if (m_grids[XS_TYPE_O_D].initialized())
+                                m_grids[XS_TYPE_O_D].m_data(x, y, z) += dE;  // acceptor O
+                            if (m_grids[XS_TYPE_N_D].initialized())
+                                m_grids[XS_TYPE_N_D].m_data(x, y, z) += dE;  // acceptor N
+                            // FIX: donor acceptor which bonded to HD, necessary?
+                            if (m_grids[XS_TYPE_O_DA].initialized())
+                                m_grids[XS_TYPE_O_DA].m_data(x, y, z) += dE;
+                            if (m_grids[XS_TYPE_N_DA].initialized())
+                                m_grids[XS_TYPE_N_DA].m_data(x, y, z) += dE;
                             break;                        // no polar H used in vina/vinardo docking
                         }
                         case bias_element::itype::acc: {  // OA, NA
@@ -801,6 +814,19 @@ void cache::compute_bias(const model& m, const std::vector<bias_element> bias_li
                     DEBUG_PRINTF("bias type=%d x=%d y=%d z=%d\n", bias->type, x, y, z);
                     switch (bias->type) {
                         case bias_element::itype::don: {  // HD
+                            fl dE = bias->vset * exp(-rb2 / bias->r / bias->r);
+                            if (dE >= -0.01) break;
+                            // std::cout << "dE=" << dE << std::endl;
+                            // choose atom constants, XS
+                            if (m_grids[XS_TYPE_O_D].initialized())
+                                m_grids[XS_TYPE_O_D].m_data(x, y, z) += dE;  // acceptor O
+                            if (m_grids[XS_TYPE_N_D].initialized())
+                                m_grids[XS_TYPE_N_D].m_data(x, y, z) += dE;  // acceptor N
+                            // FIX: donor acceptor which bonded to HD, necessary?
+                            if (m_grids[XS_TYPE_O_DA].initialized())
+                                m_grids[XS_TYPE_O_DA].m_data(x, y, z) += dE;
+                            if (m_grids[XS_TYPE_N_DA].initialized())
+                                m_grids[XS_TYPE_N_DA].m_data(x, y, z) += dE;
                             break;                        // no polar H used in vina/vinardo docking
                         }
                         case bias_element::itype::acc: {  // OA, NA

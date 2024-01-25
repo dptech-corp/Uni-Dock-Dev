@@ -104,6 +104,9 @@ fl non_cache::eval(const model& m, fl v) const {  // clean up
                 if (dE >= -0.01) continue;
                 switch (bias->type) {
                     case bias_element::itype::don: {  // HD
+                    if (t1 == XS_TYPE_O_D || t1 == XS_TYPE_N_D || t1 == XS_TYPE_O_DA
+                        || t1 == XS_TYPE_N_DA)
+                        this_e += dE;
                         break;
                     }
                     case bias_element::itype::acc: {  // OA, NA
@@ -256,6 +259,9 @@ fl non_cache::eval(const model& m, fl v) const {  // clean up
                 if (dE >= -0.01) continue;
                 switch (bias->type) {
                     case bias_element::itype::don: {  // HD
+                        if (t1 == XS_TYPE_O_D || t1 == XS_TYPE_N_D || t1 == XS_TYPE_O_DA
+                        || t1 == XS_TYPE_N_DA)
+                        this_e += dE;
                         break;
                     }
                     case bias_element::itype::acc: {  // OA, NA
@@ -503,6 +509,9 @@ fl non_cache::eval_deriv(model& m, fl v) const {  // clean up
                 if (dE >= -0.01) continue;
                 switch (bias->type) {
                     case bias_element::itype::don: {  // HD
+                        if (t1 == XS_TYPE_O_D || t1 == XS_TYPE_N_D || t1 == XS_TYPE_O_DA
+                        || t1 == XS_TYPE_N_DA)
+                        this_e += dE;
                         break;
                     }
                     case bias_element::itype::acc: {  // OA, NA
@@ -684,6 +693,9 @@ fl non_cache::eval_deriv(model& m, fl v) const {  // clean up
                 if (dE >= -0.01) continue;
                 switch (bias->type) {
                     case bias_element::itype::don: {  // HD
+                        if (t1 == XS_TYPE_O_D || t1 == XS_TYPE_N_D || t1 == XS_TYPE_O_DA
+                        || t1 == XS_TYPE_N_DA)
+                        this_e += dE;
                         break;
                     }
                     case bias_element::itype::acc: {  // OA, NA
