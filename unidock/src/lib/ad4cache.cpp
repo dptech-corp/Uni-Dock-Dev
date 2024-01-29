@@ -58,11 +58,15 @@ void ad4cache::set_bias(const std::vector<bias_element> bias_list) {
         switch (bias->type) {
             case bias_element::itype::don: {  // HD
                 set_ad4_bias(m_grids[AD_TYPE_HD], bias);
+                set_ad4_bias(m_grids[AD_TYPE_OXD], bias);
+                set_ad4_bias(m_grids[AD_TYPE_NXD], bias);
                 break;
             }
             case bias_element::itype::acc: {  // OA, NA
                 set_ad4_bias(m_grids[AD_TYPE_OA], bias);
                 set_ad4_bias(m_grids[AD_TYPE_NA], bias);
+                set_ad4_bias(m_grids[AD_TYPE_OXA], bias);
+                set_ad4_bias(m_grids[AD_TYPE_NXA], bias);
                 break;
             }
             case bias_element::itype::aro: {  // AC
@@ -135,6 +139,14 @@ std::string get_adtype_str(sz& t) {
             return "At";
         case AD_TYPE_W:
             return "W";
+        case AD_TYPE_OXA:
+            return "OXA";
+        case AD_TYPE_NXA:
+            return "NXA"; 
+        case AD_TYPE_OXD:
+            return "OXD"; 
+        case AD_TYPE_NXD:
+            return "NXD";  
         default:
             VINA_CHECK(false);
     }
