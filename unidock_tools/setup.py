@@ -1,19 +1,19 @@
 from setuptools import setup, find_packages
 
+install_requires = []
 setup(
-    name='unidock_tools',
-    version='1.1.2',
+    name="Uni-Dock Tools",
+    version="0.0.1",
     author="DP Technology",
-    author_email="yanghe@dp.tech",
-    url='https://github.com/UR-Free/unidock_tools',
-    description="A data processing tool for Uni-Dock input and output",
+    author_email="zhengh@dp.tech",
+    description=("Several docking-related applications based on Uni-Dock"),
+    url="https://github.com/dptech-corp/Uni-Dock/tree/main/unidock_tools",
+    license=None,
+    keywords="Docking",
+    install_requires=install_requires,
     packages=find_packages(),
-    install_requires=['rdkit', 'networkx', 'numpy'],
-    include_package_data=True,
-
-    entry_points={
-        'console_scripts': [
-            'Unidock = unidock_tools.unidock:main',
-        ],
-    },
+    package_data={"": ["*.dat"]},
+    zip_safe=False,
+    entry_points={"console_scripts": []},
+    include_package_data=True
 )
