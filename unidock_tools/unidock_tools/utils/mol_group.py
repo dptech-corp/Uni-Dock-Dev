@@ -1,4 +1,4 @@
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Union
 from pathlib import Path
 import os
 import copy
@@ -12,7 +12,7 @@ from .rdkit_helper import sdf_writer, set_properties, clear_properties
 
 
 class Mol:
-    def __init__(self, mol: Chem.rdchem.Mol, props: dict):
+    def __init__(self, mol: Chem.Mol, props: dict):
         self.mol_confs = [mol]
         props.update(mol.GetPropsAsDict())
         self.props = props
@@ -22,11 +22,14 @@ class Mol:
 
     def get_props(self) -> dict:
         return self.props
+    
+    def get_mol_confs(self) -> List[Chem.Mol]:
+        return self.mol_confs
 
     def get_first_mol(self) -> Chem.rdchem.Mol:
         return self.mol_confs[0]
 
-    def update_mol_confs(self, mol_confs: List[Chem.rdchem.Mol]):
+    def update_mol_confs(self, mol_confs: List[Chem.Mol]):
         self.mol_confs = mol_confs
 
     def update_props(self, props: dict):
@@ -44,9 +47,9 @@ class MolGroup:
 
     def iter_idx_list(self, batch_size: int) -> List[int]:
         real_batch_size = math.ceil(len(self.mol_group) / math.ceil(len(self.mol_group) / batch_size))
-        batch_id_list = [list(range(i, i + real_batch_size)) for i in range(0, len(self.mol_group), real_batch_size)]
+        batch_id_list = [list(range(i, min(len(self.mol_group), i + real_batch_size))) for i in range(0, len(self.mol_group), real_batch_size)]
         for sub_id_list in batch_id_list:
-            yield batch_id_list
+            yield sub_id_list
 
     def _initialize(self, ligand_files: List[Path]):
         for ligand_file in ligand_files:
@@ -62,7 +65,7 @@ class MolGroup:
         if not isinstance(mol_confs, list):
             logging.warning(f"molecule_list should be list")
             mol_confs = [mol_confs]
-        self.mol_group[idx] = [clear_properties(mol) for mol in mol_confs]
+        self.mol_group[idx].update_mol_confs([clear_properties(mol) for mol in mol_confs])
 
     def update_mol_confs_by_file_prefix(self, file_prefix: str, mol_confs_list: List[Chem.Mol]):
         file_prefix_dict = {mol.get_prop("file_prefix", ""): idx for idx, mol in enumerate(self.mol_group)}
@@ -80,12 +83,11 @@ class MolGroup:
 
     def write_sdf_by_idx(self,
                          idx: int,
-                         save_dir: Path = None,
+                         save_dir: Union[str, os.PathLike],
                          seperate_conf: bool = False,
-                         conf_prefix: str = "_CONF"
-                         ):
-        if save_dir is None:
-            save_dir = "sdf"
+                         conf_prefix: str = "_CONF",
+                         conf_props: List[str] = [],
+                         ) -> List[Path]:
         save_dir = make_tmp_dir(str(save_dir), False, False)
 
         mol_confs = self.mol_group[idx].get_mol_confs()
@@ -93,7 +95,11 @@ class MolGroup:
         props = self.mol_group[idx].get_props()
         for conf_id, mol_conf in enumerate(mol_confs):
             mol_conf_copy = copy.copy(mol_conf)
-            set_properties(mol_conf_copy, props)
+            props_copy = copy.deepcopy(props)
+            for key in props:
+                if key in conf_props and isinstance(props[key], list):
+                    props_copy[key] = props[key][conf_id]
+            set_properties(mol_conf_copy, props_copy)
             mol_confs_copy[conf_id] = mol_conf_copy
         # save SDF files
         sdf_file_list = []
@@ -108,12 +114,14 @@ class MolGroup:
             sdf_file_list.append(Path(save_name))
         return sdf_file_list
 
-    def write_sdf(self, save_dir: Path = None,
+    def write_sdf(self, save_dir: Union[str, os.PathLike],
                   seperate_conf: bool = False,
-                  conf_prefix: str = "_CONF") -> List[Path]:
+                  conf_prefix: str = "_CONF",
+                  conf_props: List[str] = []) -> List[Path]:
         result_files = []
         for idx in range(len(self.mol_group)):
             result_files.extend(self.write_sdf_by_idx(idx=idx, save_dir=save_dir,
                                                       seperate_conf=seperate_conf,
-                                                      conf_prefix=conf_prefix))
+                                                      conf_prefix=conf_prefix,
+                                                      conf_props=conf_props))
         return result_files
