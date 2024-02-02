@@ -9,13 +9,11 @@ import logging
 from multiprocessing import Pool
 from rdkit import Chem
 
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from unidock_tools.utils import time_logger, randstr, make_tmp_dir, MolGroup
 from unidock_tools.modules.protein_prep import pdb2pdbqt
 from unidock_tools.modules.ligand_prep import TopologyBuilder
 from unidock_tools.modules.docking import run_unidock
-from unidock_tools.application.base import Base
+from .base import Base
 
 
 class UniDock(Base):

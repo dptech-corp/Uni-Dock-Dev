@@ -9,7 +9,7 @@ REGISTRY_CONF_GEN_ENGINE_DICT = {
 }
 
 
-def generate_conf(mol: Chem.rdchem.Mol, engine: str = "default", *args, **kwargs) -> List[Chem.rdchem.Mol]:
+def generate_conf(mol: Chem.Mol, engine: str = "default", *args, **kwargs) -> List[Chem.Mol]:
     for name, cls in REGISTRY_CONF_GEN_ENGINE_DICT.items():
         if engine == "default":
             if cls.check_env():

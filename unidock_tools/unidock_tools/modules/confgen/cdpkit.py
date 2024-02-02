@@ -18,12 +18,12 @@ class CDPKitConfGenerator(ConfGeneratorBase):
         return shutil.which("confgen") is not None
 
     def generate_conformation(self,
-                              mol: Chem.rdchem.Mol,
+                              mol: Chem.Mol,
                               name: str = "",
                               max_num_confs_per_ligand: int = 1000,
                               min_rmsd: float = 0.5,
                               time_limit: float = 300,
-                              *args, **kwargs) -> List[Chem.rdchem.Mol]:
+                              *args, **kwargs) -> List[Chem.Mol]:
         workdir = make_tmp_dir("confgen")
         if not name:
             if mol.HasProp("_Name"):
@@ -42,7 +42,7 @@ class CDPKitConfGenerator(ConfGeneratorBase):
         cmd += ["-C", "LARGE_SET_DIVERSE"]
         cmd += ["-T", str(time_limit)]
         cmd += ["-v", "ERROR"]
-        cmd += ["-p", "False"]
+        cmd += ["--progress", "False"]
         cmd += ["-r", str(min_rmsd)]
         resp = sp.run(cmd, capture_output=True, encoding="utf-8")
         logging.debug(resp.stdout)

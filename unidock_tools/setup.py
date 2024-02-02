@@ -15,7 +15,8 @@ setup(
     package_data={"": ["*.dat"]},
     zip_safe=False,
     entry_points={"console_scripts": [
-        "unidock-pipeline = unidock_tools.application.unidock:main_cli"
+        "unidock-pipeline = unidock_tools.application.unidock:main_cli",
+        "mcdock-pipeline = unidock_tools.application.mcdock:main_cli",
     ]},
     include_package_data=True
 )
