@@ -30,8 +30,12 @@ class UniDockRunner:
                  score_only: bool = False,
                  local_only: bool = False
                  ):
-        self.workdir = make_tmp_dir("unidock")
+        self.mgltools_python_path = ""
+        self.prepare_gpf4_script_path = ""
+        self.ad4_map_data_path = ""
+        self.check_env(scoring == "ad4")
 
+        self.workdir = make_tmp_dir("unidock")
         cmd = ["unidock"]
         if scoring.lower() == "ad4":
             map_prefix = self.gen_ad4_map(
@@ -78,7 +82,30 @@ class UniDockRunner:
         if local_only:
             cmd.append("--local_only")
 
+        logging.info(f"unidock cmd: {cmd}")
         self.cmd = cmd
+
+    def check_env(self, use_ad4: bool = False):
+        if not shutil.which("unidock"):
+            raise ModuleNotFoundError("UniDock is not installed.")
+        if use_ad4:
+            mgltools_python_path = shutil.which("pythonsh")
+            if not mgltools_python_path:
+                raise ModuleNotFoundError("MGLTools is not installed.")
+            prepare_gpf4_script_path = os.path.join(
+                os.path.dirname(os.path.dirname(mgltools_python_path)),
+                "MGLToolsPckgs",
+                "AutoDockTools",
+                "Utilities24",
+                "prepare_gpf4.py",
+            )
+            if not os.path.exists(prepare_gpf4_script_path):
+                raise ModuleNotFoundError("MGLTools is not installed.")
+            if not shutil.which("autogrid4"):
+                raise ModuleNotFoundError("AutoGrid4 is not installed.")
+            self.mgltools_python_path = mgltools_python_path
+            self.prepare_gpf4_script_path = prepare_gpf4_script_path
+            self.ad4_map_data_path = str(Path(__file__).parent.parent.parent.joinpath("data/docking/AD4.1_bound.dat"))
 
     def gen_ad4_map(
             self,
@@ -131,30 +158,19 @@ class UniDockRunner:
         atom_types = list(atom_types)
         logging.info(f"atom_types: {atom_types}")
 
-        # Prepare gpf4 file
-        data_path = str(Path(__file__).parent.parent.parent.joinpath("data/docking/AD4.1_bound.dat"))
-        mgltools_python_path = str(shutil.which("pythonsh"))
-        prepare_gpf4_script_path = os.path.join(
-            os.path.dirname(os.path.dirname(mgltools_python_path)),
-            "MGLToolsPckgs",
-            "AutoDockTools",
-            "Utilities24",
-            "prepare_gpf4.py",
-        )
-
         npts = [math.ceil(size / spacing) for size in [size_x, size_y, size_z]]
 
-        cmd = (
-            f"{mgltools_python_path} {prepare_gpf4_script_path} "
-            f"-r {receptor.name} "
-            f"-p gridcenter='{center_x},{center_y},{center_z}' "
-            f"-p npts='{npts[0]},{npts[1]},{npts[2]}' "
-            f"-p spacing={spacing} -p ligand_types='{','.join(atom_types)}' "
-            f"-o {prefix}.gpf && "
-            f"sed -i '1i parameter_file {data_path}' {prefix}.gpf && "
+        cmd = "".join([
+            f"{self.mgltools_python_path} {self.prepare_gpf4_script_path} ",
+            f"-r {receptor.name} ",
+            f"-p gridcenter='{center_x},{center_y},{center_z}' ",
+            f"-p npts='{npts[0]},{npts[1]},{npts[2]}' ",
+            f"-p spacing={spacing} -p ligand_types='{','.join(atom_types)}' ",
+            f"-o {prefix}.gpf && ",
+            f"sed -i '1i parameter_file {self.ad4_map_data_path}' {prefix}.gpf && ",
             f"autogrid4 -p {prefix}.gpf -l {prefix}.glg"
-        )
-        logging.debug(cmd)
+        ])
+        logging.info(cmd)
         resp = subprocess.run(
             cmd,
             shell=True,
@@ -162,7 +178,7 @@ class UniDockRunner:
             encoding="utf-8",
             cwd=map_dir,
         )
-        logging.debug(f"Gen ad4 map log: {resp.stdout}")
+        logging.info(f"Gen ad4 map log: {resp.stdout}")
         if resp.returncode != 0:
             logging.error(f"Gen ad4 map err: {resp.stderr}")
 
@@ -174,7 +190,7 @@ class UniDockRunner:
             capture_output=True,
             encoding="utf-8",
         )
-        logging.debug(f"Run Uni-Dock log: {resp.stdout}")
+        logging.info(f"Run Uni-Dock log: {resp.stdout}")
         if resp.returncode != 0:
             logging.error(f"Run Uni-Dock error: {resp.stderr}")
 
@@ -182,16 +198,17 @@ class UniDockRunner:
         return result_ligands
 
     @staticmethod
-    def read_score(ligand_file: Union[str, os.PathLike]) -> Optional[float]:
-        score = None
+    def read_scores(ligand_file: Union[str, os.PathLike]) -> List[float]:
+        score_list = []
         with open(ligand_file, "r") as f:
             lines = f.readlines()
             for idx, line in enumerate(lines):
                 if line.startswith("> <Uni-Dock RESULT>"):
                     score = float(lines[idx + 1].partition(
                         "LOWER_BOUND=")[0][len("ENERGY="):])
-                    break
-        return score
+                    score_list.append(score)
+        logging.debug(f"score len one ligand: {len(score_list)}")
+        return score_list
 
     def clean_workdir(self):
         shutil.rmtree(self.workdir, ignore_errors=True)
@@ -216,7 +233,7 @@ def run_unidock(
         refine_step: int = 5,
         score_only: bool = False,
         local_only: bool = False,
-) -> Tuple[List[Path], List[float]]:
+) -> Tuple[List[Path], List[List[float]]]:
     runner = UniDockRunner(
         receptor=receptor, ligands=ligands,
         center_x=center_x, center_y=center_y, center_z=center_z,
@@ -228,6 +245,6 @@ def run_unidock(
         score_only=score_only, local_only=local_only,
     )
     result_ligands = runner.run()
-    scores = [UniDockRunner.read_score(ligand) for ligand in result_ligands]
+    scores_list = [UniDockRunner.read_scores(ligand) for ligand in result_ligands]
 
-    return result_ligands, scores
+    return result_ligands, scores_list

@@ -1,16 +1,18 @@
-from typing import List, Dict
+import copy
+from typing import List, Tuple, Union
 from pathlib import Path
 import os
 import time
 import shutil
-from copy import deepcopy as dc
 import argparse
 import logging
+from multiprocessing import Pool
 from rdkit import Chem
 
-from unidock_tools.utils import time_logger, make_tmp_dir
-
-from unidock_tools.modules.ligand_prep import LigandPrep
+from unidock_tools.utils import time_logger, make_tmp_dir, MolGroup
+from unidock_tools.modules.protein_prep import pdb2pdbqt
+from unidock_tools.modules.ligand_prep import TopologyBuilder
+from unidock_tools.modules.docking import run_unidock
 from .base import Base
 
 
@@ -24,10 +26,7 @@ class UniDock(Base):
                  size_x: float = 22.5,
                  size_y: float = 22.5,
                  size_z: float = 22.5,
-                 gen_conf: bool = True,
-                 max_nconf: int = 1000,
-                 min_rmsd: float = 0.5,
-                 workdir: Path = Path("MultiConfDock"),
+                 workdir: Path = Path("UniDock"),
                  ):
         """
         Initializes a MultiConfDock object.
@@ -41,25 +40,25 @@ class UniDock(Base):
             size_x (float, optional): Size of the docking box in the x-dimension. Defaults to 22.5.
             size_y (float, optional): Size of the docking box in the y-dimension. Defaults to 22.5.
             size_z (float, optional): Size of the docking box in the z-dimension. Defaults to 22.5.
-            gen_conf (bool, optional): Whether to generate conformers for the ligands. Defaults to True.
-            max_nconf (int, optional): Maximum number of conformers to generate for each ligand. Defaults to 1000.
             workdir (Path, optional): Path to the working directory. Defaults to Path("MultiConfDock").
         """
-        super().__init__()
+        self.check_dependencies()
 
+        self.workdir = workdir
+        workdir.mkdir(parents=True, exist_ok=True)
+
+        if receptor.suffix == ".pdb":
+            pdb2pdbqt(receptor, workdir.joinpath(receptor.stem + ".pdbqt"))
+            receptor = workdir.joinpath(receptor.stem + ".pdbqt")
         if receptor.suffix != ".pdbqt":
-            logging.error("receptor file must be pdbqt format")
+            logging.error("receptor file must be pdb/pdbqt format")
             exit(1)
-        for lig in ligands:
-            if lig.suffix != ".sdf":
-                logging.error(f"ligand file must be sdf format (file: {str(lig)})")
+        for ligand in ligands:
+            if ligand.suffix != ".sdf":
+                logging.error(f"ligand file must be sdf format (file: {str(ligand)})")
                 exit(1)
         self.receptor = receptor
-        self.workdir = workdir
-        # [[mol1-conf1, ..., mol1-confM], ..., [molN-conf1, ..., molN-confM]]
-        self.molgroup = MoleculeGroup(ligands)
-        os.makedirs(workdir, exist_ok=True)
-        if gen_conf: self.generate_conformation(max_nconf, min_rmsd)
+        self.mol_group = MolGroup(ligands)
         self.build_topology()
         self.center_x = center_x
         self.center_y = center_y
@@ -72,154 +71,108 @@ class UniDock(Base):
         """
         Checks if all dependencies are installed.
         """
-        pass
+        if not shutil.which("unidock"):
+            raise ModuleNotFoundError("To run Uni-Dock, you need to install Uni-Dock")
 
-    def run_unidock(self,
-                    center_x: float,
-                    center_y: float,
-                    center_z: float,
-                    size_x: float = 22.5,
-                    size_y: float = 22.5,
-                    size_z: float = 22.5,
-                    num_modes: int = 10,
-                    scoring_function: str = 'vina',
-                    search_mode: str = "",
-                    exhaustiveness: int = 256,
-                    maxstep: int = 10,
-                    refine_step: int = 5,
-                    score_only: bool = False,
-                    local_only: bool = False):
-        unidock_args_list = []
-        for k, v in kwargs.items():
-            self._check_arg(str(k), v)
-            unidock_args_list.append(f"--{k}")
-            unidock_args_list.append(str(v))
+    def _build_topology(self, id_mol_tup: Tuple[int, Chem.rdchem.Mol]):
+        """
+        Build topology for a molecule.
+        :param id_mol_tup:
+        :return:
+        """
+        idx, mol = id_mol_tup
+        topo_builder = TopologyBuilder(mol=mol)
+        topo_builder.build_molecular_graph()
+        fragment_info, torsion_info, atom_info = topo_builder.get_sdf_torsion_tree_info()
+        return idx, fragment_info, torsion_info, atom_info
 
     @time_logger
     def build_topology(self):
-        for idx, mollist, _ in self.molgroup:
-            fraginfo, torsioninfo, atominfo, fraginfo_all = topogen(mollist[0])
-            self.molgroup.update_property(idx, "fraginfo", fraginfo)
-            self.molgroup.update_property(idx, "torsioninfo", torsioninfo)
-            self.molgroup.update_property(idx, "atominfo", atominfo)
-            self.molgroup.update_property(idx, "fraginfo_all", fraginfo_all)
+        id_mol_tup_list = [(idx, mol.get_first_mol()) for idx, mol in enumerate(self.mol_group)]
+        with Pool(os.cpu_count()) as pool:
+            for idx, frag_info, torsion_info, atom_info in pool \
+                    .imap_unordered(self._build_topology, id_mol_tup_list):
+                self.mol_group.update_property_by_idx(idx, "fragInfo", frag_info)
+                self.mol_group.update_property_by_idx(idx, "torsionInfo", torsion_info)
+                self.mol_group.update_property_by_idx(idx, "atomInfo", atom_info)
 
     @time_logger
-    def init_docking_data(self, prefix: str = "init", prop_list: List[str] = [], batch_size: int = 20):
-        os.chdir(self.workdir)
-        input_dir = make_tmp_dir(f"{prefix}_inputs")
-        index_list = self.molgroup.get_index()
-        for idx in range(0, len(index_list), batch_size):
+    def init_docking_data(self, input_dir: Union[str, os.PathLike], batch_size: int = 20):
+        for sub_idx_list in self.mol_group.iter_idx_list(batch_size):
             input_list = []
-            for i in index_list[idx:idx + batch_size]:
-                input_list += self.molgroup.get_sdf_by_index(i, prop_list, save_dir=input_dir, seperate_confs=True)
-            logging.info(f"[{prefix}] {len(input_list)} inputs generated.")
+            for idx in sub_idx_list:
+                input_list += self.mol_group.write_sdf_by_idx(idx, save_dir=input_dir, seperate_conf=True)
             yield input_list, input_dir
 
     @time_logger
-    def postprocessing(self, ligands: List[Path], scores: List[float], topn: int = 10, score_name: str = "score"):
-        os.chdir(self.workdir)
-        mol_score_dict = {}
-        for ligand, score in zip(ligands, scores):
-            fprefix = ligand.stem.replace("_out", "").split("_CONF")[0]
+    def postprocessing(self, ligand_scores_list: List[Tuple[Path, List[float]]],
+                       topn_conf: int = 10,
+                       score_name: str = "score"):
+        mol_score_dict = dict()
+        for ligand, scores in ligand_scores_list:
+            fprefix = ligand.stem.rpartition("_out")[0].split("_CONF")[0]
+            result_mols = [mol for mol in Chem.SDMolSupplier(str(ligand), removeHs=False)]
             mol_score_dict[fprefix] = mol_score_dict.get(fprefix, []) + [(mol, s) for mol, s in zip(
-                Chem.SDMolSupplier(str(ligand), removeHs=False), score)]
-        for fprefix in mol_score_dict.keys():
+                result_mols, scores)]
+        for fprefix in mol_score_dict:
             mol_score_list = mol_score_dict[fprefix]
             logging.info(f"[PostProc] {fprefix} has generated {len(mol_score_list)} poses.")
             mol_score_list.sort(key=lambda x: x[1], reverse=False)
-            self.molgroup.update_molecule_list_by_file_prefix(fprefix,
-                                                              [dc(mol) for mol, score in mol_score_list[:topn]])
-            self.molgroup.update_property_by_file_prefix(fprefix, score_name,
-                                                         [score for mol, score in mol_score_list[:topn]])
+            self.mol_group.update_mol_confs_by_file_prefix(fprefix,
+                                                           [copy.copy(mol) for mol, _ in
+                                                            mol_score_list[:topn_conf]])
+            self.mol_group.update_property_by_file_prefix(fprefix, score_name,
+                                                          [score for _, score in
+                                                           mol_score_list[:topn_conf]])
 
     @time_logger
-    def rigid_docking(self,
-                      scoring_function: str = "vina",
-                      exhaustiveness: int = 256,
-                      maxstep: int = 10,
-                      num_modes: int = 3,
-                      refine_step: int = 3,
-                      topn: int = 10,
-                      batch_size: int = 20,
-                      ):
-        os.chdir(self.workdir)
+    def run_unidock(self,
+                    scoring_function: str = "vina",
+                    exhaustiveness: int = 256,
+                    max_step: int = 10,
+                    num_modes: int = 3,
+                    refine_step: int = 3,
+                    topn: int = 10,
+                    batch_size: int = 20,
+                    local_only: bool = False,
+                    ):
+        input_dir = make_tmp_dir(f"{self.workdir}/rigid_docking")
+        output_dir = make_tmp_dir(f"{self.workdir}/rigid_docking")
         for ligand_list, input_dir in self.init_docking_data(
-                prefix="rigid_docking",
-                prop_list=["fraginfo_all", "atominfo"],
+                input_dir=input_dir,
                 batch_size=batch_size
         ):
-            # Run rigid docking
-            output_dir = make_tmp_dir("rigid_docking")
-            ligands, scores = unidock_runner(
-                self.receptor, ligand_list,
-                self.center_x, self.center_y, self.center_z,
-                self.size_x, self.size_y, self.size_z,
-                scoring_function, output_dir,
-                exhaustiveness, maxstep,
-                num_modes, refine_step
+            # Run docking
+            ligands, scores_list = run_unidock(
+                receptor=self.receptor, ligands=ligand_list, output_dir=output_dir,
+                center_x=self.center_x, center_y=self.center_y, center_z=self.center_z,
+                size_x=self.size_x, size_y=self.size_y, size_z=self.size_z,
+                scoring=scoring_function, num_modes=num_modes,
+                exhaustiveness=exhaustiveness, max_step=max_step,
+                refine_step=refine_step, local_only=local_only,
             )
             shutil.rmtree(input_dir)
             # Ranking
-            self.postprocessing(ligands, scores, topn, "rigid_docking_score")
+            self.postprocessing(zip(ligands, scores_list), topn, "rigid_docking_score")
             shutil.rmtree(output_dir)
 
     @time_logger
-    def local_refine(self,
-                     scoring_function: str = "vina",
-                     exhaustiveness: int = 32,
-                     maxstep: int = 40,
-                     num_modes: int = 3,
-                     refine_step: int = 3,
-                     topn: int = 10,
-                     batch_size: int = 20,
-                     ):
-        os.chdir(self.workdir)
-        for ligand_list, input_dir in self.init_docking_data(
-                prefix="local_refine",
-                prop_list=["fraginfo", "atominfo", "torsioninfo"],
-                batch_size=batch_size
-        ):
-            # Run local refine
-            output_dir = make_tmp_dir(prefix="local_refine")
-            ligands, scores = unidock_runner(
-                self.receptor, ligand_list,
-                self.center_x, self.center_y, self.center_z,
-                self.size_x, self.size_y, self.size_z,
-                scoring_function, output_dir,
-                exhaustiveness, maxstep,
-                num_modes, refine_step, True
-            )
-            shutil.rmtree(input_dir)
-            # Ranking
-            self.postprocessing(ligands, scores, topn, "local_refine_score")
-            shutil.rmtree(output_dir)
-
-    @time_logger
-    def save_result(self, savedir: Path = None):
-        os.chdir(self.workdir)
-        if savedir is None:
-            savedir = "multi_conf_dock_result"
+    def save_result(self, savedir: Union[str, os.PathLike] = ""):
+        if not savedir:
+            savedir = f"{self.workdir}/results_dir"
         savedir = make_tmp_dir(str(savedir), False, False)
-        res_list = [p for p in self.molgroup.get_sdf(
-            ["all"], save_dir=savedir, seperate_confs=False,
-            additional_suffix="_mcdock")]
+        res_list = self.mol_group.write_sdf(seperate_conf=False, conf_prefix="_unidock")
         return res_list
 
 
 def main_cli():
     """
-    Command line interface for MultiConfDock.
+    Command line interface for UniDock.
 
     Input files:
     -r, --receptor: receptor file in pdbqt format
     -l, --ligands: ligand file in sdf format, separated by commas(,)
     -i, --ligand_index: a text file containing the path of ligand files in sdf format
-
-    ConfGen arguments:
-    -g, --gen_conf: whether to generate conformers for the ligands
-    -n, --max_num_confs_per_ligand: maximum number of conformers to generate for each ligand (default: 200)
-    -m, --min_rmsd: minimum rmsd for conformer generation (default: 0.3)
 
     Docking box:
     -cx, --center_x: center_x of docking box
@@ -234,23 +187,15 @@ def main_cli():
     -sd, --savedir: save directory (default: MultiConfDock-Result)
     -bs, --batch_size: batch size for docking (default: 20)
 
-    Scoring function and search mode for rigid docking:
-    -sf_rd, --scoring_function_rigid_docking: scoring function used in rigid docking (default: vina)
-    -ex_rd, --exhaustiveness_rigid_docking: exhaustiveness used in rigid docking (default: 256)
-    -ms_rd, --maxstep_rigid_docking: maxstep used in rigid docking (default: 10)
-    -nm_rd, --num_modes_rigid_docking: num_modes used in rigid docking (default: 3)
-    -rs_rd, --refine_step_rigid_docking: refine_step used in rigid docking (default: 3)
-    -topn_rd, --topn_rigid_docking: topn used in rigid docking (default: 200)
-
-    Scoring function and search mode for local refine:
-    -sf_lr, --scoring_function_local_refine: scoring function used in local refine (default: vina)
-    -ex_lr, --exhaustiveness_local_refine: exhaustiveness used in local refine (default: 32)
-    -ms_lr, --maxstep_local_refine: maxstep used in local refine (default: 40)
-    -nm_lr, --num_modes_local_refine: num_modes used in local refine (default: 3)
-    -rs_lr, --refine_step_local_refine: refine_step used in local refine (default: 5)
-    -topn_lr, --topn_local_refine: topn used in local refine (default: 100)
+    Uni-Dock arguments:
+    -sf, --scoring_function: scoring function used in rigid docking (default: vina)
+    -ex, --exhaustiveness: exhaustiveness used in rigid docking (default: 256)
+    -ms, --max_step: max_step used in rigid docking (default: 10)
+    -nm, --num_modes: num_modes used in rigid docking (default: 3)
+    -rs, --refine_step: refine_step used in rigid docking (default: 3)
+    -topn, --topn: topn used in rigid docking (default: 200)
     """
-    parser = argparse.ArgumentParser(description="MultiConfDock")
+    parser = argparse.ArgumentParser(description="UniDock")
 
     parser.add_argument("-r", "--receptor", type=str, required=True,
                         help="Receptor file in pdbqt format.")
@@ -258,13 +203,6 @@ def main_cli():
                         help="Ligand file in sdf format. Specify multiple files separated by commas.")
     parser.add_argument("-i", "--ligand_index", type=str, default="",
                         help="A text file containing the path of ligand files in sdf format.")
-
-    parser.add_argument("-g", "--gen_conf", action="store_true",
-                        help="Whether to generate conformers for the ligands. Default: False.")
-    parser.add_argument("-n", "--max_num_confs_per_ligand", type=int, default=200,
-                        help="Maximum number of conformers to generate for each ligand. Default: 200.")
-    parser.add_argument("-m", "--min_rmsd", type=float, default=0.3,
-                        help="Minimum rmsd for conformer generation. Default: 0.3.")
 
     parser.add_argument("-cx", "--center_x", type=float, required=True,
                         help="X-coordinate of the docking box center.")
@@ -279,50 +217,31 @@ def main_cli():
     parser.add_argument("-sz", "--size_z", type=float, default=22.5,
                         help="Width of the docking box in Z direction. Default: 22.5.")
 
-    parser.add_argument("-wd", "--workdir", type=str, default="MultiConfDock",
+    parser.add_argument("-wd", "--workdir", type=str, default="unidock",
                         help="Working directory. Default: 'MultiConfDock'.")
-    parser.add_argument("-sd", "--savedir", type=str, default="MultiConfDock-Result",
+    parser.add_argument("-sd", "--savedir", type=str, default="unidock_results",
                         help="Save directory. Default: 'MultiConfDock-Result'.")
     parser.add_argument("-bs", "--batch_size", type=int, default=20,
                         help="Batch size for docking. Default: 20.")
 
-    parser.add_argument("-sf_rd", "--scoring_function_rigid_docking",
+    parser.add_argument("-sf", "--scoring_function",
                         type=str, default="vina",
                         help="Scoring function used in rigid docking. Default: 'vina'.")
-    parser.add_argument("-ex_rd", "--exhaustiveness_rigid_docking",
+    parser.add_argument("-ex", "--exhaustiveness",
                         type=int, default=256,
                         help="Exhaustiveness used in rigid docking. Default: 128.")
-    parser.add_argument("-ms_rd", "--maxstep_rigid_docking",
+    parser.add_argument("-ms", "--max_step",
                         type=int, default=10,
                         help="Max step used in rigid docking. Default: 10.")
-    parser.add_argument("-nm_rd", "--num_modes_rigid_docking",
+    parser.add_argument("-nm", "--num_modes",
                         type=int, default=3,
                         help="Number of modes used in rigid docking. Default: 3.")
-    parser.add_argument("-rs_rd", "--refine_step_rigid_docking",
+    parser.add_argument("-rs", "--refine_step",
                         type=int, default=3,
                         help="Refine step used in rigid docking. Default: 3.")
-    parser.add_argument("-topn_rd", "--topn_rigid_docking",
+    parser.add_argument("-topn", "--topn",
                         type=int, default=100,
                         help="Top N results used in rigid docking. Default: 100.")
-    parser.add_argument("-ex_lr", "--exhaustiveness_local_refine",
-                        type=int, default=32,
-                        help="Exhaustiveness used in rigid docking. Default: 128.")
-    parser.add_argument("-ms_lr", "--maxstep_local_refine",
-                        type=int, default=40,
-                        help="Max step used in rigid docking. Default: 10.")
-    parser.add_argument("-sf_lr", "--scoring_function_local_refine",
-                        type=str, default="vina",
-                        help="Scoring function used in local refine. Default: 'vina'.")
-
-    parser.add_argument("-nm_lr", "--num_modes_local_refine",
-                        type=int, default=1,
-                        help="Number of modes used in local refine. Default: 1.")
-    parser.add_argument("-rs_lr", "--refine_step_local_refine",
-                        type=int, default=5,
-                        help="Refine step used in local refine. Default: 5.")
-    parser.add_argument("-topn_lr", "--topn_local_refine",
-                        type=int, default=1,
-                        help="Top N results used in local refine. Default: 1.")
 
     args = parser.parse_args()
     logging.info(f"[Params] {args.__dict__}")
@@ -348,11 +267,11 @@ def main_cli():
     if len(ligands) == 0:
         logging.error("No ligands found.")
         exit(1)
-    logging.info(f"[MultiConfDock] {len(ligands)} ligands found.")
+    logging.info(f"[UniDock Pipeline] {len(ligands)} ligands found.")
 
-    logging.info("[MultiConfDock] Start")
+    logging.info("[UniDock Pipeline] Start")
     start_time = time.time()
-    mcd = MultiConfDock(
+    runner = UniDock(
         receptor=Path(args.receptor).resolve(),
         ligands=ligands,
         center_x=float(args.center_x),
@@ -361,37 +280,22 @@ def main_cli():
         size_x=float(args.size_x),
         size_y=float(args.size_y),
         size_z=float(args.size_z),
-        gen_conf=bool(args.gen_conf),
-        max_nconf=int(args.max_num_confs_per_ligand),
-        min_rmsd=float(args.min_rmsd),
         workdir=workdir
     )
-    logging.info("[MultiConfDock] Start rigid docking")
-    mcd.rigid_docking(
-        scoring_function=str(args.scoring_function_rigid_docking),
-        exhaustiveness=int(args.exhaustiveness_rigid_docking),
-        maxstep=int(args.maxstep_rigid_docking),
-        num_modes=int(args.num_modes_rigid_docking),
-        refine_step=int(args.refine_step_rigid_docking),
-        topn=int(args.topn_rigid_docking),
+    logging.info("[UniDock Pipeline] Start docking")
+    runner.run_unidock(
+        scoring_function=str(args.scoring_function),
+        exhaustiveness=int(args.exhaustiveness),
+        max_step=int(args.max_step),
+        num_modes=int(args.num_modes),
+        refine_step=int(args.refine_step),
+        topn=int(args.topn),
         batch_size=int(args.batch_size),
     )
-    logging.info("[MultiConfDock] Start local refine")
-    mcd.local_refine(
-        scoring_function=str(args.scoring_function_local_refine),
-        exhaustiveness=int(args.exhaustiveness_local_refine),
-        maxstep=int(args.maxstep_local_refine),
-        num_modes=int(args.num_modes_local_refine),
-        refine_step=int(args.refine_step_local_refine),
-        topn=int(args.topn_local_refine),
-        batch_size=int(args.batch_size),
-    )
-    mcd.save_result(
-        savedir=savedir
-    )
+    runner.save_result(savedir=savedir)
     end_time = time.time()
-    logging.info(f"[MultiConfDock] Workflow finished ({end_time - start_time:.2f} s)")
-    shutil.rmtree(workdir)
+    logging.info(f"UniDock Pipeline finished ({end_time - start_time:.2f} s)")
+    shutil.rmtree(workdir, ignore_errors=True)
 
 
 if __name__ == "__main__":

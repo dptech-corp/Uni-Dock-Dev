@@ -1,7 +1,7 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 
-class Base(metaclass=ABCMeta):
+class Base(ABC):
     @abstractmethod
     def check_dependencies(self) -> bool:
         """ Check ligand type by file path """

@@ -55,7 +55,7 @@ def assign_atom_properties(mol: Chem.rdchem.Mol):
         atom.SetDoubleProp('z', atom_positions[atom_idx, 2])
 
 
-class AtomType(object):
+class AtomType:
     def __init__(self):
         self.atom_type_definition_list = ATOM_TYPE_DEFINITION_LIST
 
@@ -83,7 +83,7 @@ class AtomType(object):
         return atom_ind_type_map
 
 
-class RotatableBond(object):
+class RotatableBond:
     def __init__(self,
                  min_macrocycle_size: int = 7,
                  max_macrocycle_size: int = 33,
@@ -116,7 +116,7 @@ class RotatableBond(object):
         return default_rotatable_bond_info_list
 
 
-class TopologyBuilder(object):
+class TopologyBuilder:
     def __init__(self, mol: Chem.rdchem.Mol):
         self.mol = mol
 
@@ -461,3 +461,9 @@ class TopologyBuilder(object):
             os.makedirs(os.path.dirname(os.path.abspath(out_file)), exist_ok=True)
             with Chem.SDWriter(out_file) as writer:
                 writer.write(self.mol)
+
+
+def generate_topology(mol: Chem.rdchem.Mol, out_file: str = ''):
+    topology_builder = TopologyBuilder(mol)
+    topology_builder.build_molecular_graph()
+    topology_builder.write_pdbqt_file(out_file=out_file)
