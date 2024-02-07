@@ -1,5 +1,4 @@
-import copy
-from typing import List, Tuple, Union
+from typing import List
 from pathlib import Path
 import os
 import time
@@ -7,8 +6,7 @@ import shutil
 import argparse
 import logging
 
-from unidock_tools.utils import time_logger, make_tmp_dir
-from unidock_tools.modules.docking import run_unidock
+from unidock_tools.utils import time_logger
 from unidock_tools.modules.confgen import generate_conf
 from .unidock import UniDock
 
@@ -69,50 +67,75 @@ class MultiConfDock(UniDock):
             self.mol_group.update_mol_confs(idx, gen_mol_confs)
 
 
-def main_cli():
-    """
-    Command line interface for MultiConfDock.
+def main(args: dict):
+    workdir = Path(args["workdir"]).resolve()
+    savedir = Path(args["savedir"]).resolve()
 
-    Input files:
-    -r, --receptor: receptor file in pdbqt format
-    -l, --ligands: ligand file in sdf format, separated by commas(,)
-    -i, --ligand_index: a text file containing the path of ligand files in sdf format
+    ligands = []
+    if args["ligands"]:
+        for lig in args["ligands"]:
+            if not Path(lig).exists():
+                logging.error(f"Cannot find {lig}")
+                continue
+            ligands.append(Path(lig).resolve())
+    if args["ligand_index"]:
+        with open(args["ligand_index"], "r") as f:
+            for line in f.readlines():
+                if not Path(line.strip()).exists():
+                    logging.error(f"Cannot find {line.strip()}")
+                    continue
+                ligands.append(Path(line.strip()).resolve())
 
-    ConfGen arguments:
-    -g, --gen_conf: whether to generate conformers for the ligands
-    -n, --max_num_confs_per_ligand: maximum number of conformers to generate for each ligand (default: 200)
-    -m, --min_rmsd: minimum rmsd for conformer generation (default: 0.3)
+    if len(ligands) == 0:
+        logging.error("No ligands found.")
+        exit(1)
+    logging.info(f"[MultiConfDock] {len(ligands)} ligands found.")
 
-    Docking box:
-    -cx, --center_x: center_x of docking box
-    -cy, --center_y: center_y of docking box
-    -cz, --center_z: center_z of docking box
-    -sx, --size_x: size_x of docking box (default: 22.5)
-    -sy, --size_y: size_y of docking box (default: 22.5)
-    -sz, --size_z: size_z of docking box (default: 22.5)
+    logging.info("[MultiConfDock] Start")
+    start_time = time.time()
+    mcd = MultiConfDock(
+        receptor=Path(args["receptor"]).resolve(),
+        ligands=ligands,
+        center_x=float(args["center_x"]),
+        center_y=float(args["center_y"]),
+        center_z=float(args["center_z"]),
+        size_x=float(args["size_x"]),
+        size_y=float(args["size_y"]),
+        size_z=float(args["size_z"]),
+        gen_conf=bool(args["gen_conf"]),
+        max_nconf=int(args["max_num_confs_per_ligand"]),
+        min_rmsd=float(args["min_rmsd"]),
+        workdir=workdir
+    )
+    logging.info("[MultiConfDock] Start rigid docking")
+    mcd.run_unidock(
+        scoring_function=str(args["scoring_function_rigid_docking"]),
+        exhaustiveness=int(args["exhaustiveness_rigid_docking"]),
+        maxstep=int(args["maxstep_rigid_docking"]),
+        num_modes=int(args["num_modes_rigid_docking"]),
+        refine_step=int(args["refine_step_rigid_docking"]),
+        topn=int(args["topn_rigid_docking"]),
+        batch_size=int(args["batch_size"]),
+    )
+    logging.info("[MultiConfDock] Start local refine")
+    mcd.run_unidock(
+        scoring_function=str(args["scoring_function_local_refine"]),
+        exhaustiveness=int(args["exhaustiveness_local_refine"]),
+        maxstep=int(args["maxstep_local_refine"]),
+        num_modes=int(args["num_modes_local_refine"]),
+        refine_step=int(args["refine_step_local_refine"]),
+        topn=int(args["topn_local_refine"]),
+        batch_size=int(args["batch_size"]),
+        local_only=True,
+    )
+    mcd.save_result(savedir=savedir)
+    end_time = time.time()
+    logging.info(f"[MultiConfDock] Workflow finished ({end_time - start_time:.2f} s)")
+    shutil.rmtree(workdir)
 
-    Optional arguments:
-    -wd, --workdir: working directory (default: MultiConfDock)
-    -sd, --savedir: save directory (default: MultiConfDock-Result)
-    -bs, --batch_size: batch size for docking (default: 20)
 
-    Scoring function and search mode for rigid docking:
-    -sf_rd, --scoring_function_rigid_docking: scoring function used in rigid docking (default: vina)
-    -ex_rd, --exhaustiveness_rigid_docking: exhaustiveness used in rigid docking (default: 256)
-    -ms_rd, --maxstep_rigid_docking: maxstep used in rigid docking (default: 10)
-    -nm_rd, --num_modes_rigid_docking: num_modes used in rigid docking (default: 3)
-    -rs_rd, --refine_step_rigid_docking: refine_step used in rigid docking (default: 3)
-    -topn_rd, --topn_rigid_docking: topn used in rigid docking (default: 200)
-
-    Scoring function and search mode for local refine:
-    -sf_lr, --scoring_function_local_refine: scoring function used in local refine (default: vina)
-    -ex_lr, --exhaustiveness_local_refine: exhaustiveness used in local refine (default: 32)
-    -ms_lr, --maxstep_local_refine: maxstep used in local refine (default: 40)
-    -nm_lr, --num_modes_local_refine: num_modes used in local refine (default: 3)
-    -rs_lr, --refine_step_local_refine: refine_step used in local refine (default: 5)
-    -topn_lr, --topn_local_refine: topn used in local refine (default: 100)
-    """
-    parser = argparse.ArgumentParser(description="MultiConfDock")
+def get_parser():
+    parser = argparse.ArgumentParser(description="MultiConfDock", add_help=False)
 
     parser.add_argument("-r", "--receptor", type=str, required=True,
                         help="Receptor file in pdbqt format.")
@@ -185,74 +208,56 @@ def main_cli():
     parser.add_argument("-topn_lr", "--topn_local_refine",
                         type=int, default=1,
                         help="Top N results used in local refine. Default: 1.")
+    return parser
 
-    args = parser.parse_args()
-    logging.info(f"[Params] {args.__dict__}")
 
-    workdir = Path(args.workdir).resolve()
-    savedir = Path(args.savedir).resolve()
+def main_cli():
+    """
+    Command line interface for MultiConfDock.
 
-    ligands = []
-    if args.ligands:
-        for lig in args.ligands:
-            if not Path(lig).exists():
-                logging.error(f"Cannot find {lig}")
-                continue
-            ligands.append(Path(lig).resolve())
-    if args.ligand_index:
-        with open(args.ligand_index, "r") as f:
-            for line in f.readlines():
-                if not Path(line.strip()).exists():
-                    logging.error(f"Cannot find {line.strip()}")
-                    continue
-                ligands.append(Path(line.strip()).resolve())
+    Input files:
+    -r, --receptor: receptor file in pdbqt format
+    -l, --ligands: ligand file in sdf format, separated by commas(,)
+    -i, --ligand_index: a text file containing the path of ligand files in sdf format
 
-    if len(ligands) == 0:
-        logging.error("No ligands found.")
-        exit(1)
-    logging.info(f"[MultiConfDock] {len(ligands)} ligands found.")
+    ConfGen arguments:
+    -g, --gen_conf: whether to generate conformers for the ligands
+    -n, --max_num_confs_per_ligand: maximum number of conformers to generate for each ligand (default: 200)
+    -m, --min_rmsd: minimum rmsd for conformer generation (default: 0.3)
 
-    logging.info("[MultiConfDock] Start")
-    start_time = time.time()
-    mcd = MultiConfDock(
-        receptor=Path(args.receptor).resolve(),
-        ligands=ligands,
-        center_x=float(args.center_x),
-        center_y=float(args.center_y),
-        center_z=float(args.center_z),
-        size_x=float(args.size_x),
-        size_y=float(args.size_y),
-        size_z=float(args.size_z),
-        gen_conf=bool(args.gen_conf),
-        max_nconf=int(args.max_num_confs_per_ligand),
-        min_rmsd=float(args.min_rmsd),
-        workdir=workdir
-    )
-    logging.info("[MultiConfDock] Start rigid docking")
-    mcd.run_unidock(
-        scoring_function=str(args.scoring_function_rigid_docking),
-        exhaustiveness=int(args.exhaustiveness_rigid_docking),
-        maxstep=int(args.maxstep_rigid_docking),
-        num_modes=int(args.num_modes_rigid_docking),
-        refine_step=int(args.refine_step_rigid_docking),
-        topn=int(args.topn_rigid_docking),
-        batch_size=int(args.batch_size),
-    )
-    logging.info("[MultiConfDock] Start local refine")
-    mcd.run_unidock(
-        scoring_function=str(args.scoring_function_local_refine),
-        exhaustiveness=int(args.exhaustiveness_local_refine),
-        maxstep=int(args.maxstep_local_refine),
-        num_modes=int(args.num_modes_local_refine),
-        refine_step=int(args.refine_step_local_refine),
-        topn=int(args.topn_local_refine),
-        batch_size=int(args.batch_size),
-        local_only=True,
-    )
-    mcd.save_result(savedir=savedir)
-    end_time = time.time()
-    logging.info(f"[MultiConfDock] Workflow finished ({end_time - start_time:.2f} s)")
-    shutil.rmtree(workdir)
+    Docking box:
+    -cx, --center_x: center_x of docking box
+    -cy, --center_y: center_y of docking box
+    -cz, --center_z: center_z of docking box
+    -sx, --size_x: size_x of docking box (default: 22.5)
+    -sy, --size_y: size_y of docking box (default: 22.5)
+    -sz, --size_z: size_z of docking box (default: 22.5)
+
+    Optional arguments:
+    -wd, --workdir: working directory (default: MultiConfDock)
+    -sd, --savedir: save directory (default: MultiConfDock-Result)
+    -bs, --batch_size: batch size for docking (default: 20)
+
+    Scoring function and search mode for rigid docking:
+    -sf_rd, --scoring_function_rigid_docking: scoring function used in rigid docking (default: vina)
+    -ex_rd, --exhaustiveness_rigid_docking: exhaustiveness used in rigid docking (default: 256)
+    -ms_rd, --maxstep_rigid_docking: maxstep used in rigid docking (default: 10)
+    -nm_rd, --num_modes_rigid_docking: num_modes used in rigid docking (default: 3)
+    -rs_rd, --refine_step_rigid_docking: refine_step used in rigid docking (default: 3)
+    -topn_rd, --topn_rigid_docking: topn used in rigid docking (default: 200)
+
+    Scoring function and search mode for local refine:
+    -sf_lr, --scoring_function_local_refine: scoring function used in local refine (default: vina)
+    -ex_lr, --exhaustiveness_local_refine: exhaustiveness used in local refine (default: 32)
+    -ms_lr, --maxstep_local_refine: maxstep used in local refine (default: 40)
+    -nm_lr, --num_modes_local_refine: num_modes used in local refine (default: 3)
+    -rs_lr, --refine_step_local_refine: refine_step used in local refine (default: 5)
+    -topn_lr, --topn_local_refine: topn used in local refine (default: 100)
+    """
+    parser = get_parser()
+    args = parser.parse_args().__dict__
+    logging.info(f"[Params] {args}")
+    main(args)
 
 
 if __name__ == "__main__":

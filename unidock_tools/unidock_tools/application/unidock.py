@@ -165,37 +165,61 @@ class UniDock(Base):
         return res_list
 
 
-def main_cli():
-    """
-    Command line interface for UniDock.
+def main(args: dict):
+    workdir = Path(args["workdir"]).resolve()
+    savedir = Path(args["savedir"]).resolve()
 
-    Input files:
-    -r, --receptor: receptor file in pdbqt format
-    -l, --ligands: ligand file in sdf format, separated by commas(,)
-    -i, --ligand_index: a text file containing the path of ligand files in sdf format
+    ligands = []
+    if args["ligands"]:
+        for lig in args["ligands"]:
+            if not Path(lig).exists():
+                logging.error(f"Cannot find {lig}")
+                continue
+            ligands.append(Path(lig).resolve())
+    if args["ligand_index"]:
+        with open(args["ligand_index"], "r") as f:
+            for line in f.readlines():
+                if not Path(line.strip()).exists():
+                    logging.error(f"Cannot find {line.strip()}")
+                    continue
+                ligands.append(Path(line.strip()).resolve())
 
-    Docking box:
-    -cx, --center_x: center_x of docking box
-    -cy, --center_y: center_y of docking box
-    -cz, --center_z: center_z of docking box
-    -sx, --size_x: size_x of docking box (default: 22.5)
-    -sy, --size_y: size_y of docking box (default: 22.5)
-    -sz, --size_z: size_z of docking box (default: 22.5)
+    if len(ligands) == 0:
+        logging.error("No ligands found.")
+        exit(1)
+    logging.info(f"[UniDock Pipeline] {len(ligands)} ligands found.")
 
-    Optional arguments:
-    -wd, --workdir: working directory (default: MultiConfDock)
-    -sd, --savedir: save directory (default: MultiConfDock-Result)
-    -bs, --batch_size: batch size for docking (default: 20)
+    logging.info("[UniDock Pipeline] Start")
+    start_time = time.time()
+    runner = UniDock(
+        receptor=Path(args["receptor"]).resolve(),
+        ligands=ligands,
+        center_x=float(args["center_x"]),
+        center_y=float(args["center_y"]),
+        center_z=float(args["center_z"]),
+        size_x=float(args["size_x"]),
+        size_y=float(args["size_y"]),
+        size_z=float(args["size_z"]),
+        workdir=workdir
+    )
+    logging.info("[UniDock Pipeline] Start docking")
+    runner.run_unidock(
+        scoring_function=str(args["scoring_function"]),
+        exhaustiveness=int(args["exhaustiveness"]),
+        max_step=int(args["max_step"]),
+        num_modes=int(args["num_modes"]),
+        refine_step=int(args["refine_step"]),
+        topn=int(args["topn"]),
+        batch_size=int(args["batch_size"]),
+    )
+    runner.save_result(savedir=savedir)
+    end_time = time.time()
+    logging.info(f"UniDock Pipeline finished ({end_time - start_time:.2f} s)")
+    shutil.rmtree(workdir, ignore_errors=True)
 
-    Uni-Dock arguments:
-    -sf, --scoring_function: scoring function used in rigid docking (default: vina)
-    -ex, --exhaustiveness: exhaustiveness used in rigid docking (default: 256)
-    -ms, --max_step: max_step used in rigid docking (default: 10)
-    -nm, --num_modes: num_modes used in rigid docking (default: 3)
-    -rs, --refine_step: refine_step used in rigid docking (default: 3)
-    -topn, --topn: topn used in rigid docking (default: 200)
-    """
-    parser = argparse.ArgumentParser(description="UniDock")
+
+def get_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="UniDock", add_help=False)
 
     parser.add_argument("-r", "--receptor", type=str, required=True,
                         help="Receptor file in pdbqt format.")
@@ -242,60 +266,43 @@ def main_cli():
     parser.add_argument("-topn", "--topn",
                         type=int, default=100,
                         help="Top N results used in rigid docking. Default: 100.")
+    return parser
 
-    args = parser.parse_args()
-    logging.info(f"[Params] {args.__dict__}")
 
-    workdir = Path(args.workdir).resolve()
-    savedir = Path(args.savedir).resolve()
+def main_cli():
+    """
+    Command line interface for UniDock.
 
-    ligands = []
-    if args.ligands:
-        for lig in args.ligands:
-            if not Path(lig).exists():
-                logging.error(f"Cannot find {lig}")
-                continue
-            ligands.append(Path(lig).resolve())
-    if args.ligand_index:
-        with open(args.ligand_index, "r") as f:
-            for line in f.readlines():
-                if not Path(line.strip()).exists():
-                    logging.error(f"Cannot find {line.strip()}")
-                    continue
-                ligands.append(Path(line.strip()).resolve())
+    Input files:
+    -r, --receptor: receptor file in pdbqt format
+    -l, --ligands: ligand file in sdf format, separated by commas(,)
+    -i, --ligand_index: a text file containing the path of ligand files in sdf format
 
-    if len(ligands) == 0:
-        logging.error("No ligands found.")
-        exit(1)
-    logging.info(f"[UniDock Pipeline] {len(ligands)} ligands found.")
+    Docking box:
+    -cx, --center_x: center_x of docking box
+    -cy, --center_y: center_y of docking box
+    -cz, --center_z: center_z of docking box
+    -sx, --size_x: size_x of docking box (default: 22.5)
+    -sy, --size_y: size_y of docking box (default: 22.5)
+    -sz, --size_z: size_z of docking box (default: 22.5)
 
-    logging.info("[UniDock Pipeline] Start")
-    start_time = time.time()
-    runner = UniDock(
-        receptor=Path(args.receptor).resolve(),
-        ligands=ligands,
-        center_x=float(args.center_x),
-        center_y=float(args.center_y),
-        center_z=float(args.center_z),
-        size_x=float(args.size_x),
-        size_y=float(args.size_y),
-        size_z=float(args.size_z),
-        workdir=workdir
-    )
-    logging.info("[UniDock Pipeline] Start docking")
-    runner.run_unidock(
-        scoring_function=str(args.scoring_function),
-        exhaustiveness=int(args.exhaustiveness),
-        max_step=int(args.max_step),
-        num_modes=int(args.num_modes),
-        refine_step=int(args.refine_step),
-        topn=int(args.topn),
-        batch_size=int(args.batch_size),
-    )
-    runner.save_result(savedir=savedir)
-    end_time = time.time()
-    logging.info(f"UniDock Pipeline finished ({end_time - start_time:.2f} s)")
-    shutil.rmtree(workdir, ignore_errors=True)
+    Optional arguments:
+    -wd, --workdir: working directory (default: MultiConfDock)
+    -sd, --savedir: save directory (default: MultiConfDock-Result)
+    -bs, --batch_size: batch size for docking (default: 20)
+
+    Uni-Dock arguments:
+    -sf, --scoring_function: scoring function used in rigid docking (default: vina)
+    -ex, --exhaustiveness: exhaustiveness used in rigid docking (default: 256)
+    -ms, --max_step: max_step used in rigid docking (default: 10)
+    -nm, --num_modes: num_modes used in rigid docking (default: 3)
+    -rs, --refine_step: refine_step used in rigid docking (default: 3)
+    -topn, --topn: topn used in rigid docking (default: 200)
+    """
+    parser = get_parser()
+    args = parser.parse_args().__dict__
+    logging.info(f"[Params] {args}")
+    main(args)
 
 
 if __name__ == "__main__":
