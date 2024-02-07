@@ -13,7 +13,7 @@ from unidock_tools.utils import randstr, make_tmp_dir, time_logger
 class UniDockRunner:
     def __init__(self,
                  receptor: Union[str, os.PathLike],
-                 ligands: List[Union[str, os.PathLike]],
+                 ligands: List[Path],
                  center_x: float,
                  center_y: float,
                  center_z: float,
@@ -84,6 +84,8 @@ class UniDockRunner:
 
         logging.info(f"unidock cmd: {cmd}")
         self.cmd = cmd
+
+        self.pre_result_ligands = [Path(os.path.join(output_dir, f"{l.stem}_out.sdf")) for l in ligands]
 
     def check_env(self, use_ad4: bool = False):
         if not shutil.which("unidock"):
@@ -194,7 +196,7 @@ class UniDockRunner:
         if resp.returncode != 0:
             logging.error(f"Run Uni-Dock error: {resp.stderr}")
 
-        result_ligands = [Path(f) for f in glob.glob(os.path.join(self.output_dir, "*_out.sdf"))]
+        result_ligands = [f for f in self.pre_result_ligands if os.path.exists(f)]
         return result_ligands
 
     @staticmethod
@@ -207,7 +209,6 @@ class UniDockRunner:
                     score = float(lines[idx + 1].partition(
                         "LOWER_BOUND=")[0][len("ENERGY="):])
                     score_list.append(score)
-        logging.debug(f"score len one ligand: {len(score_list)}")
         return score_list
 
     def clean_workdir(self):
@@ -246,5 +247,6 @@ def run_unidock(
     )
     result_ligands = runner.run()
     scores_list = [UniDockRunner.read_scores(ligand) for ligand in result_ligands]
+    runner.clean_workdir()
 
     return result_ligands, scores_list

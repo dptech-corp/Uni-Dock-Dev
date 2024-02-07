@@ -9,7 +9,7 @@ import logging
 from multiprocessing import Pool
 from rdkit import Chem
 
-from unidock_tools.utils import time_logger, make_tmp_dir, MolGroup
+from unidock_tools.utils import time_logger, randstr, make_tmp_dir, MolGroup
 from unidock_tools.modules.protein_prep import pdb2pdbqt
 from unidock_tools.modules.ligand_prep import TopologyBuilder
 from unidock_tools.modules.docking import run_unidock
@@ -26,7 +26,7 @@ class UniDock(Base):
                  size_x: float = 22.5,
                  size_y: float = 22.5,
                  size_z: float = 22.5,
-                 workdir: Path = Path("UniDock"),
+                 workdir: Path = Path("docking_pipeline"),
                  ):
         """
         Initializes a MultiConfDock object.
@@ -45,7 +45,7 @@ class UniDock(Base):
         self.check_dependencies()
 
         self.workdir = workdir
-        workdir.mkdir(parents=True, exist_ok=True)
+        self.workdir.mkdir(parents=True, exist_ok=True)
 
         if receptor.suffix == ".pdb":
             pdb2pdbqt(receptor, workdir.joinpath(receptor.stem + ".pdbqt"))
@@ -116,7 +116,6 @@ class UniDock(Base):
                 result_mols, scores)]
         for fprefix in mol_score_dict:
             mol_score_list = mol_score_dict[fprefix]
-            logging.info(f"[PostProc] {fprefix} has generated {len(mol_score_list)} poses.")
             mol_score_list.sort(key=lambda x: x[1], reverse=False)
             self.mol_group.update_mol_confs_by_file_prefix(fprefix,
                                                            [copy.copy(mol) for mol, _ in
@@ -135,9 +134,10 @@ class UniDock(Base):
                     topn: int = 10,
                     batch_size: int = 20,
                     local_only: bool = False,
+                    score_name: str = "docking_score"
                     ):
-        input_dir = make_tmp_dir(f"{self.workdir}/rigid_docking")
-        output_dir = make_tmp_dir(f"{self.workdir}/rigid_docking")
+        input_dir = make_tmp_dir(f"{self.workdir}/docking_inputs")
+        output_dir = make_tmp_dir(f"{self.workdir}/docking_results")
         for ligand_list, input_dir in self.init_docking_data(
                 input_dir=input_dir,
                 batch_size=batch_size
@@ -151,17 +151,18 @@ class UniDock(Base):
                 exhaustiveness=exhaustiveness, max_step=max_step,
                 refine_step=refine_step, local_only=local_only,
             )
-            shutil.rmtree(input_dir)
             # Ranking
-            self.postprocessing(zip(ligands, scores_list), topn, "rigid_docking_score")
-            shutil.rmtree(output_dir)
+            self.postprocessing(zip(ligands, scores_list), topn, score_name)
+
+        shutil.rmtree(input_dir)
+        shutil.rmtree(output_dir)
 
     @time_logger
-    def save_result(self, savedir: Union[str, os.PathLike] = ""):
-        if not savedir:
-            savedir = f"{self.workdir}/results_dir"
-        savedir = make_tmp_dir(str(savedir), False, False)
-        res_list = self.mol_group.write_sdf(seperate_conf=False, conf_prefix="_unidock")
+    def save_results(self, save_dir: Union[str, os.PathLike] = ""):
+        if not save_dir:
+            save_dir = f"{self.workdir}/results_dir"
+        save_dir = make_tmp_dir(str(save_dir), False, False)
+        res_list = self.mol_group.write_sdf(save_dir=save_dir, seperate_conf=False, conf_prefix="_unidock", conf_props=["docking_score"])
         return res_list
 
 
@@ -212,7 +213,7 @@ def main(args: dict):
         topn=int(args["topn"]),
         batch_size=int(args["batch_size"]),
     )
-    runner.save_result(savedir=savedir)
+    runner.save_results(savedir=savedir)
     end_time = time.time()
     logging.info(f"UniDock Pipeline finished ({end_time - start_time:.2f} s)")
     shutil.rmtree(workdir, ignore_errors=True)
@@ -241,7 +242,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument("-sz", "--size_z", type=float, default=22.5,
                         help="Width of the docking box in Z direction. Default: 22.5.")
 
-    parser.add_argument("-wd", "--workdir", type=str, default="unidock",
+    parser.add_argument("-wd", "--workdir", type=str, default=f"unidock_pipeline_{randstr(5)}",
                         help="Working directory. Default: 'MultiConfDock'.")
     parser.add_argument("-sd", "--savedir", type=str, default="unidock_results",
                         help="Save directory. Default: 'MultiConfDock-Result'.")

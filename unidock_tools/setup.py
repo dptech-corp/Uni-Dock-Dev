@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 install_requires = []
 setup(
-    name="Uni-Dock Tools",
+    name="unidock_tools",
     version="0.0.1",
     author="DP Technology",
     author_email="zhengh@dp.tech",
@@ -14,6 +14,8 @@ setup(
     packages=find_packages(),
     package_data={"": ["*.dat"]},
     zip_safe=False,
-    entry_points={"console_scripts": []},
+    entry_points={"console_scripts": [
+        "unidocktools = unidock_tools.main:main_cli",
+    ]},
     include_package_data=True
 )

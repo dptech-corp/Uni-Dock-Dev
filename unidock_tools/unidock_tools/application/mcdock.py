@@ -6,7 +6,7 @@ import shutil
 import argparse
 import logging
 
-from unidock_tools.utils import time_logger
+from unidock_tools.utils import time_logger, randstr
 from unidock_tools.modules.confgen import generate_conf
 from .unidock import UniDock
 
@@ -61,7 +61,7 @@ class MultiConfDock(UniDock):
                               min_rmsd: float = 0.5):
         for idx, mol in enumerate(self.mol_group):
             prefix = mol.get_prop("file_prefix", "")
-            gen_mol_confs = generate_conf(mol, name=prefix,
+            gen_mol_confs = generate_conf(mol.get_first_mol(), name=prefix,
                                           max_num_confs_per_ligand=max_nconf,
                                           min_rmsd=min_rmsd)
             self.mol_group.update_mol_confs(idx, gen_mol_confs)
@@ -111,7 +111,7 @@ def main(args: dict):
     mcd.run_unidock(
         scoring_function=str(args["scoring_function_rigid_docking"]),
         exhaustiveness=int(args["exhaustiveness_rigid_docking"]),
-        maxstep=int(args["maxstep_rigid_docking"]),
+        max_step=int(args["max_step_rigid_docking"]),
         num_modes=int(args["num_modes_rigid_docking"]),
         refine_step=int(args["refine_step_rigid_docking"]),
         topn=int(args["topn_rigid_docking"]),
@@ -121,14 +121,14 @@ def main(args: dict):
     mcd.run_unidock(
         scoring_function=str(args["scoring_function_local_refine"]),
         exhaustiveness=int(args["exhaustiveness_local_refine"]),
-        maxstep=int(args["maxstep_local_refine"]),
+        max_step=int(args["max_step_local_refine"]),
         num_modes=int(args["num_modes_local_refine"]),
         refine_step=int(args["refine_step_local_refine"]),
         topn=int(args["topn_local_refine"]),
         batch_size=int(args["batch_size"]),
         local_only=True,
     )
-    mcd.save_result(savedir=savedir)
+    mcd.save_results(savedir=savedir)
     end_time = time.time()
     logging.info(f"[MultiConfDock] Workflow finished ({end_time - start_time:.2f} s)")
     shutil.rmtree(workdir)
@@ -164,9 +164,9 @@ def get_parser():
     parser.add_argument("-sz", "--size_z", type=float, default=22.5,
                         help="Width of the docking box in Z direction. Default: 22.5.")
 
-    parser.add_argument("-wd", "--workdir", type=str, default="MultiConfDock",
+    parser.add_argument("-wd", "--workdir", type=str, default=f"mcdock_{randstr(5)}",
                         help="Working directory. Default: 'MultiConfDock'.")
-    parser.add_argument("-sd", "--savedir", type=str, default="MultiConfDock-Result",
+    parser.add_argument("-sd", "--savedir", type=str, default="mcdock_results",
                         help="Save directory. Default: 'MultiConfDock-Result'.")
     parser.add_argument("-bs", "--batch_size", type=int, default=20,
                         help="Batch size for docking. Default: 20.")
@@ -177,7 +177,7 @@ def get_parser():
     parser.add_argument("-ex_rd", "--exhaustiveness_rigid_docking",
                         type=int, default=256,
                         help="Exhaustiveness used in rigid docking. Default: 128.")
-    parser.add_argument("-ms_rd", "--maxstep_rigid_docking",
+    parser.add_argument("-ms_rd", "--max_step_rigid_docking",
                         type=int, default=10,
                         help="Max step used in rigid docking. Default: 10.")
     parser.add_argument("-nm_rd", "--num_modes_rigid_docking",
@@ -192,7 +192,7 @@ def get_parser():
     parser.add_argument("-ex_lr", "--exhaustiveness_local_refine",
                         type=int, default=32,
                         help="Exhaustiveness used in rigid docking. Default: 128.")
-    parser.add_argument("-ms_lr", "--maxstep_local_refine",
+    parser.add_argument("-ms_lr", "--max_step_local_refine",
                         type=int, default=40,
                         help="Max step used in rigid docking. Default: 10.")
     parser.add_argument("-sf_lr", "--scoring_function_local_refine",
@@ -241,7 +241,7 @@ def main_cli():
     Scoring function and search mode for rigid docking:
     -sf_rd, --scoring_function_rigid_docking: scoring function used in rigid docking (default: vina)
     -ex_rd, --exhaustiveness_rigid_docking: exhaustiveness used in rigid docking (default: 256)
-    -ms_rd, --maxstep_rigid_docking: maxstep used in rigid docking (default: 10)
+    -ms_rd, --max_step_rigid_docking: maxstep used in rigid docking (default: 10)
     -nm_rd, --num_modes_rigid_docking: num_modes used in rigid docking (default: 3)
     -rs_rd, --refine_step_rigid_docking: refine_step used in rigid docking (default: 3)
     -topn_rd, --topn_rigid_docking: topn used in rigid docking (default: 200)
@@ -249,7 +249,7 @@ def main_cli():
     Scoring function and search mode for local refine:
     -sf_lr, --scoring_function_local_refine: scoring function used in local refine (default: vina)
     -ex_lr, --exhaustiveness_local_refine: exhaustiveness used in local refine (default: 32)
-    -ms_lr, --maxstep_local_refine: maxstep used in local refine (default: 40)
+    -ms_lr, --max_step_local_refine: maxstep used in local refine (default: 40)
     -nm_lr, --num_modes_local_refine: num_modes used in local refine (default: 3)
     -rs_lr, --refine_step_local_refine: refine_step used in local refine (default: 5)
     -topn_lr, --topn_local_refine: topn used in local refine (default: 100)
