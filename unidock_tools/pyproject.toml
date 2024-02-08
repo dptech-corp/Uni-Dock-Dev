@@ -24,10 +24,14 @@ classifiers = [
 #    "networkx",
 #]
 [tool.setuptools_scm]
+write_to = "unidock_tools/_version.py"
 
 [project.urls]
 Homepage = "https://github.com/dptech-corp/Uni-Dock"
 Repository = "https://github.com/dptech-corp/Uni-Dock.git"
+
+[tool.setuptools.package-data]
+ad4data = ["*.dat"]
 
 [project.scripts]
 unidocktools = "unidock_tools.main:main_cli"
