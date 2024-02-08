@@ -31,7 +31,7 @@ Homepage = "https://github.com/dptech-corp/Uni-Dock"
 Repository = "https://github.com/dptech-corp/Uni-Dock.git"
 
 [tool.setuptools.package-data]
-ad4data = ["*.dat"]
+unidock_tools.data = ["*.dat"]
 
 [project.scripts]
 unidocktools = "unidock_tools.main:main_cli"
