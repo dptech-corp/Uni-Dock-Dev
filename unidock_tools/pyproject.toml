@@ -1,10 +1,11 @@
 [build-system]
-requires = [ "setuptools", "setuptools-scm" ]
+requires = [ "setuptools" ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "unidock_tools"
-dynamic = [ "version" ]
+version = "0.0.1"
+#dynamic = [ "version" ]
 keywords = [ "Docking" ]
 authors = [
     { name = "Yannan Yuan", email = "yuanyn@dp.tech" },
@@ -23,15 +24,13 @@ classifiers = [
 #    "rdkit",
 #    "networkx",
 #]
-[tool.setuptools_scm]
-write_to = "unidock_tools/_version.py"
+
+[tool.setuptools.package-data]
+"*" = ["*.dat"]
 
 [project.urls]
 Homepage = "https://github.com/dptech-corp/Uni-Dock"
 Repository = "https://github.com/dptech-corp/Uni-Dock.git"
-
-[tool.setuptools.package-data]
-unidock_tools.data = ["*.dat"]
 
 [project.scripts]
 unidocktools = "unidock_tools.main:main_cli"
