@@ -220,7 +220,7 @@ def main(args: dict):
 
 
 def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="UniDock", add_help=False)
+    parser = argparse.ArgumentParser(description="UniDock")
 
     parser.add_argument("-r", "--receptor", type=str, required=True,
                         help="Receptor file in pdbqt format.")

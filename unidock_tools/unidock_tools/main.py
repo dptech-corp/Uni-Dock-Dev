@@ -21,12 +21,13 @@ def main_cli():
         if app_name in ["__init__", "base"]:
             continue
         module = importlib.import_module(f".{app_name}", package=application.__name__)
-        subparsers.add_parser(app_name, parents=[module.get_parser()])
+        subparsers.add_parser(app_name, parents=[module.get_parser()], add_help=False)
         name_module_dict[app_name] = module
 
     args = parser.parse_args().__dict__
     logging.info(f"[Params] {args}")
-    assert args["cmd"] in name_module_dict, f"Invalid module name for unidock_tools: {args['cmd']}"
+    assert args["cmd"] in name_module_dict, \
+        f"Invalid module name for unidocktools cmd: {args['cmd']}, choose from {list(name_module_dict.keys())}"
 
     name_module_dict[args["cmd"]].main(args)
 

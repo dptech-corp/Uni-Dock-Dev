@@ -134,8 +134,8 @@ def main(args: dict):
     shutil.rmtree(workdir)
 
 
-def get_parser():
-    parser = argparse.ArgumentParser(description="MultiConfDock", add_help=False)
+def get_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="MultiConfDock")
 
     parser.add_argument("-r", "--receptor", type=str, required=True,
                         help="Receptor file in pdbqt format.")
