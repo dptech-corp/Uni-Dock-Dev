@@ -128,7 +128,7 @@ def main(args: dict):
         batch_size=int(args["batch_size"]),
         local_only=True,
     )
-    mcd.save_results(savedir=savedir)
+    mcd.save_results(save_dir=savedir)
     end_time = time.time()
     logging.info(f"[MultiConfDock] Workflow finished ({end_time - start_time:.2f} s)")
     shutil.rmtree(workdir)

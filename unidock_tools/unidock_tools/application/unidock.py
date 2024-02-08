@@ -213,7 +213,7 @@ def main(args: dict):
         topn=int(args["topn"]),
         batch_size=int(args["batch_size"]),
     )
-    runner.save_results(savedir=savedir)
+    runner.save_results(save_dir=savedir)
     end_time = time.time()
     logging.info(f"UniDock Pipeline finished ({end_time - start_time:.2f} s)")
     shutil.rmtree(workdir, ignore_errors=True)
