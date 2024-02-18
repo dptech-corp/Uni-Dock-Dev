@@ -60,5 +60,8 @@ class OBabelConfGenerator(ConfGeneratorBase):
         mol_list = [mol for mol in Chem.SDMolSupplier(f"{workdir}/{name}.sdf",
                                                       removeHs=False) if mol is not None]
         logging.info(f"OBabel generated {len(mol_list)} conformers")
+        if len(mol_list) > max_num_confs_per_ligand:
+            mol_list = mol_list[:max_num_confs_per_ligand]
+
         shutil.rmtree(workdir, ignore_errors=True)
         return mol_list

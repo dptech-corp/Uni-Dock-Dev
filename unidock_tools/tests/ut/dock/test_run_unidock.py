@@ -7,12 +7,12 @@ import pytest
 
 @pytest.fixture
 def receptor():
-    return os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "inputs", "1bcu_protein.pdb")
+    return Path(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "inputs", "1bcu_protein.pdb"))
 
 
 @pytest.fixture
 def ligand():
-    return os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "inputs", "1bcu_ligand.sdf")
+    return Path(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "inputs", "1bcu_ligand.sdf"))
 
 
 @pytest.fixture
