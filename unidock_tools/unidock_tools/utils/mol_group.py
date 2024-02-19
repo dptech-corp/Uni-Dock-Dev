@@ -26,7 +26,7 @@ class Mol:
     def get_mol_confs(self) -> List[Chem.Mol]:
         return self.mol_confs
 
-    def get_first_mol(self) -> Chem.rdchem.Mol:
+    def get_first_mol(self) -> Chem.Mol:
         return self.mol_confs[0]
 
     def update_mol_confs(self, mol_confs: List[Chem.Mol]):

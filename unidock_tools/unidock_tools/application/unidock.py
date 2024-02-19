@@ -74,7 +74,7 @@ class UniDock(Base):
         if not shutil.which("unidock"):
             raise ModuleNotFoundError("To run Uni-Dock, you need to install Uni-Dock")
 
-    def _build_topology(self, id_mol_tup: Tuple[int, Chem.rdchem.Mol]):
+    def _build_topology(self, id_mol_tup: Tuple[int, Chem.Mol]):
         """
         Build topology for a molecule.
         :param id_mol_tup:

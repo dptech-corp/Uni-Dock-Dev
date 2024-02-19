@@ -37,3 +37,14 @@ unidocktools = "unidock_tools.main:main_cli"
 
 #[project.entry-points."unidocktools"]
 #unidocktools = "unidock_tools.main:main_cli"
+
+[tool.pyright]
+include = ["unidock_tools"]
+exclude = ["**/node_modules",
+    "**/__pycache__",
+    "unidock_tools/data"
+]
+reportMissingImports = true
+reportMissingTypeStubs = false
+pythonVersion = "3.11"
+pythonPlatform = "Linux"

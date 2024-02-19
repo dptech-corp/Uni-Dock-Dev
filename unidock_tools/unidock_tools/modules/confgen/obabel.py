@@ -18,10 +18,10 @@ class OBabelConfGenerator(ConfGeneratorBase):
         return shutil.which("obabel") is not None
 
     def generate_conformation(self,
-                              mol: Chem.rdchem.Mol,
+                              mol: Chem.Mol,
                               name: str = "",
                               max_num_confs_per_ligand: int = 1000,
-                              *args, **kwargs) -> List[Chem.rdchem.Mol]:
+                              *args, **kwargs) -> List[Chem.Mol]:
         workdir = make_tmp_dir("obabel")
         if not name:
             if mol.HasProp("_Name"):
