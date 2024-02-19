@@ -35,6 +35,7 @@ def ligprep(mol_name_tup: Tuple[Chem.Mol, str], savedir: Path):
     tb.build_molecular_graph()
     tb.write_sdf_file(os.path.join(savedir, f"{name}.sdf"))
 
+
 def main(args: dict):
     ligands = []
     if args["ligands"]:
