@@ -69,13 +69,15 @@ class MolGroup:
 
     def update_mol_confs_by_file_prefix(self, file_prefix: str, mol_confs_list: List[Chem.Mol]):
         file_prefix_dict = {mol.get_prop("file_prefix", ""): idx for idx, mol in enumerate(self.mol_group)}
-        if not file_prefix_dict.get(file_prefix):
+        logging.debug(file_prefix_dict)
+        if file_prefix not in file_prefix_dict:
             logging.error(f"Cannot find {file_prefix} in MoleculeGroup")
             return
         self.update_mol_confs(file_prefix_dict[file_prefix], mol_confs_list)
 
     def update_property_by_file_prefix(self, file_prefix: str, property_name: str, value: Any):
         file_prefix_dict = {mol.get_prop("file_prefix", ""): idx for idx, mol in enumerate(self.mol_group)}
+        logging.debug(file_prefix_dict)
         if file_prefix not in file_prefix_dict:
             logging.error(f"Cannot find {file_prefix} in MoleculeGroup")
             return

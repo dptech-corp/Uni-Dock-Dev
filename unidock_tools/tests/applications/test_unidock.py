@@ -25,7 +25,7 @@ def read_scores(sdf_file, score_name):
     with open(sdf_file, "r") as f:
         lines = f.readlines()
         for idx, line in enumerate(lines):
-            if line.startswith(f"> <{score_name}>"):
+            if line.startswith(f">  <{score_name}>"):
                 score = float(lines[idx + 1].strip())
                 score_list.append(score)
     return score_list
@@ -54,7 +54,7 @@ def test_unidock_pipeline_ligand_index(receptor, ligand, pocket):
     index_file = Path("ligand_index.txt")
     with open(index_file, "w") as f:
         f.write(str(ligand))
-    results_dir = "unidock_results"
+    results_dir = "unidock_results_input_index"
     cmd = f"unidocktools unidock -r {receptor} -i {index_file} -sd {results_dir} \
         -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -sx {pocket[3]} -sy {pocket[4]} -sz {pocket[5]} \
         -sf vina -nm 1"
@@ -74,7 +74,7 @@ def test_unidock_pipeline_ligand_index(receptor, ligand, pocket):
 
 
 def test_unidock_pipeline_scoring_ad4(receptor, ligand, pocket):
-    results_dir = "unidock_results"
+    results_dir = "unidock_results_ad4"
     cmd = f"unidocktools unidock -r {receptor} -l {ligand} -sd {results_dir} \
         -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -sx {pocket[3]} -sy {pocket[4]} -sz {pocket[5]} \
         -sf ad4 -nm 1"
@@ -93,7 +93,7 @@ def test_unidock_pipeline_scoring_ad4(receptor, ligand, pocket):
 
 
 def test_unidock_pipeline_multi_pose(receptor, ligand, pocket):
-    results_dir = "unidock_results"
+    results_dir = "unidock_results_multi_pose"
     cmd = f"unidocktools unidock -r {receptor} -l {ligand} -sd {results_dir} \
         -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -sx {pocket[3]} -sy {pocket[4]} -sz {pocket[5]} \
         -sf vina -nm 4"

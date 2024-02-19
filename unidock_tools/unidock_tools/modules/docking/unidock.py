@@ -155,7 +155,7 @@ class UniDockRunner:
                             tag = True
                         elif tag and (line.startswith(">  <") or line.startswith("$$$$")):
                             tag = False
-                        if tag:
+                        elif tag:
                             atom_types.add(line[13:].strip())
         atom_types = list(atom_types)
         logging.info(f"atom_types: {atom_types}")

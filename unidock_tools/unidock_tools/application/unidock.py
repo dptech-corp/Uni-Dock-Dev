@@ -117,6 +117,8 @@ class UniDock(Base):
         for fprefix in mol_score_dict:
             mol_score_list = mol_score_dict[fprefix]
             mol_score_list.sort(key=lambda x: x[1], reverse=False)
+            logging.debug(fprefix)
+            logging.debug(mol_score_list)
             self.mol_group.update_mol_confs_by_file_prefix(fprefix,
                                                            [copy.copy(mol) for mol, _ in
                                                             mol_score_list[:topn_conf]])

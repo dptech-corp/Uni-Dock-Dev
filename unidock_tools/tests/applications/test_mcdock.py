@@ -25,7 +25,7 @@ def read_scores(sdf_file, score_name):
     with open(sdf_file, "r") as f:
         lines = f.readlines()
         for idx, line in enumerate(lines):
-            if line.startswith(f"> <{score_name}>"):
+            if line.startswith(f">  <{score_name}>"):
                 score = float(lines[idx + 1].strip())
                 score_list.append(score)
     return score_list
