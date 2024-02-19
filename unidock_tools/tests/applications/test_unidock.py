@@ -7,12 +7,12 @@ import pytest
 
 @pytest.fixture
 def receptor():
-    return Path(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "inputs", "1bcu_protein.pdb"))
+    return Path(os.path.join(os.path.dirname(os.path.dirname(__file__)), "inputs", "1bcu_protein.pdb"))
 
 
 @pytest.fixture
 def ligand():
-    return Path(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "inputs", "1bcu_ligand.sdf"))
+    return Path(os.path.join(os.path.dirname(os.path.dirname(__file__)), "inputs", "1bcu_ligand.sdf"))
 
 
 @pytest.fixture
@@ -24,15 +24,15 @@ def test_unidock_pipeline_default(receptor, ligand, pocket):
     from unidock_tools.modules.docking.unidock import UniDockRunner
 
     results_dir = "unidock_results"
-    cmd = f"unidock_tools unidock -r {receptor} -l {ligand} -sd {results_dir} \
-        -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -ex {pocket[3]} -ey {pocket[4]} -ez {pocket[5]} \
+    cmd = f"unidocktools unidock -r {receptor} -l {ligand} -sd {results_dir} \
+        -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -sx {pocket[3]} -sy {pocket[4]} -sz {pocket[5]} \
         -sf vina -nm 1"
     print(cmd)
     resp = subprocess.run(cmd, shell=True, capture_output=True, encoding="utf-8")
     print(resp.stdout)
     assert resp.returncode == 0, f"run unidock pipeline app err:\n{resp.stderr}"
 
-    result_file = os.path.join(results_dir, "1bcu_ligand_out.sdf")
+    result_file = os.path.join(results_dir, "1bcu_ligand.sdf")
     assert os.path.exists(result_file), f"docking result file not found"
 
     score_list = UniDockRunner.read_scores(result_file)
@@ -48,15 +48,15 @@ def test_unidock_pipeline_ligand_index(receptor, ligand, pocket):
     with open(index_file, "w") as f:
         f.write(str(ligand))
     results_dir = "unidock_results"
-    cmd = f"unidock_tools unidock -r {receptor} -i {index_file} -sd {results_dir} \
-        -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -ex {pocket[3]} -ey {pocket[4]} -ez {pocket[5]} \
+    cmd = f"unidocktools unidock -r {receptor} -i {index_file} -sd {results_dir} \
+        -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -sx {pocket[3]} -sy {pocket[4]} -sz {pocket[5]} \
         -sf vina -nm 1"
     print(cmd)
     resp = subprocess.run(cmd, shell=True, capture_output=True, encoding="utf-8")
     print(resp.stdout)
     assert resp.returncode == 0, f"run unidock pipeline app err:\n{resp.stderr}"
 
-    result_file = os.path.join(results_dir, "1bcu_ligand_out.sdf")
+    result_file = os.path.join(results_dir, "1bcu_ligand.sdf")
     assert os.path.exists(result_file), f"docking result file not found"
 
     score_list = UniDockRunner.read_scores(result_file)
@@ -70,15 +70,15 @@ def test_unidock_pipeline_scoring_ad4(receptor, ligand, pocket):
     from unidock_tools.modules.docking.unidock import UniDockRunner
 
     results_dir = "unidock_results"
-    cmd = f"unidock_tools unidock -r {receptor} -l {ligand} -sd {results_dir} \
-        -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -ex {pocket[3]} -ey {pocket[4]} -ez {pocket[5]} \
+    cmd = f"unidocktools unidock -r {receptor} -l {ligand} -sd {results_dir} \
+        -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -sx {pocket[3]} -sy {pocket[4]} -sz {pocket[5]} \
         -sf ad4 -nm 1"
     print(cmd)
     resp = subprocess.run(cmd, shell=True, capture_output=True, encoding="utf-8")
     print(resp.stdout)
     assert resp.returncode == 0, f"run unidock pipeline app err:\n{resp.stderr}"
 
-    result_file = os.path.join(results_dir, "1bcu_ligand_out.sdf")
+    result_file = os.path.join(results_dir, "1bcu_ligand.sdf")
     assert os.path.exists(result_file), f"docking result file not found"
 
     score_list = UniDockRunner.read_scores(result_file)
@@ -91,15 +91,15 @@ def test_unidock_pipeline_multi_pose(receptor, ligand, pocket):
     from unidock_tools.modules.docking.unidock import UniDockRunner
 
     results_dir = "unidock_results"
-    cmd = f"unidock_tools unidock -r {receptor} -l {ligand} -sd {results_dir} \
-        -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -ex {pocket[3]} -ey {pocket[4]} -ez {pocket[5]} \
+    cmd = f"unidocktools unidock -r {receptor} -l {ligand} -sd {results_dir} \
+        -cx {pocket[0]} -cy {pocket[1]} -cz {pocket[2]} -sx {pocket[3]} -sy {pocket[4]} -sz {pocket[5]} \
         -sf vina -nm 4"
     print(cmd)
     resp = subprocess.run(cmd, shell=True, capture_output=True, encoding="utf-8")
     print(resp.stdout)
     assert resp.returncode == 0, f"run unidock pipeline app err:\n{resp.stderr}"
 
-    result_file = os.path.join(results_dir, "1bcu_ligand_out.sdf")
+    result_file = os.path.join(results_dir, "1bcu_ligand.sdf")
     assert os.path.exists(result_file), f"docking result file not found"
 
     score_list = UniDockRunner.read_scores(result_file)

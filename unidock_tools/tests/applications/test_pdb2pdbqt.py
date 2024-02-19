@@ -11,7 +11,7 @@ def pdb_file():
 
 def test_pdb2pdbqt_app(pdb_file):
     pdbqt_file = "protein.pdbqt"
-    cmd = f"unidock_tools pdb2pdbqt -r {pdb_file} -o {pdbqt_file}"
+    cmd = f"unidocktools pdb2pdbqt -r {pdb_file} -o {pdbqt_file}"
     print(cmd)
     resp = subprocess.run(cmd, shell=True, capture_output=True, encoding="utf-8")
     print(resp.stdout)

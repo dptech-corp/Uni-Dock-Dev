@@ -25,6 +25,9 @@ classifiers = [
 #    "networkx",
 #]
 
+[tool.setuptools.packages.find]
+include = ["unidock_tools"]
+
 [tool.setuptools.package-data]
 "*" = ["*.dat"]
 
