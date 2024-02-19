@@ -11,7 +11,7 @@ from unidock_tools.modules.ligand_prep import TopologyBuilder
 
 
 def iter_ligands(ligands: List[Path], batch_size: int = 1200,
-                 use_file_name: bool = False) -> Generator[List[Tuple[Chem.Mol, str]]]:
+                 use_file_name: bool = False) -> Generator[List[Tuple[Chem.Mol, str]], None, None]:
     curr_mol_name_list = []
     for ligand in ligands:
         mols = list(Chem.SDMolSupplier(str(ligand), removeHs=False))

@@ -12,7 +12,7 @@ from unidock_tools.utils import randstr, make_tmp_dir, time_logger
 
 class UniDockRunner:
     def __init__(self,
-                 receptor: Union[str, os.PathLike],
+                 receptor: Union[str, Path, os.PathLike],
                  ligands: List[Path],
                  center_x: float,
                  center_y: float,
