@@ -148,13 +148,12 @@ class TopologyBuilder:
         num_fragments = len(splitted_mol_list)
 
         # 1. Find fragment as the root node
-        num_fragment_atoms_list = [None] * num_fragments
+        num_fragment_atoms_list = [0] * num_fragments
         for fragment_idx in range(num_fragments):
             fragment = splitted_mol_list[fragment_idx]
             num_atoms = fragment.GetNumAtoms()
             num_fragment_atoms_list[fragment_idx] = num_atoms
 
-        root_fragment_idx = None
         root_fragment_idx = np.argmax(num_fragment_atoms_list)
 
         # 2. Build torsion tree
@@ -165,7 +164,6 @@ class TopologyBuilder:
         root_fragment = splitted_mol_list[root_fragment_idx]
         num_root_atoms = root_fragment.GetNumAtoms()
         atom_info_list = [None] * num_root_atoms
-
         for root_atom_idx in range(num_root_atoms):
             root_atom = root_fragment.GetAtomWithIdx(root_atom_idx)
             atom_info_dict = {}

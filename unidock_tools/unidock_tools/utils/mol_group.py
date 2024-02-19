@@ -1,4 +1,4 @@
-from typing import List, Any, Optional, Union
+from typing import List, Generator, Any, Optional, Union
 from pathlib import Path
 import os
 import copy
@@ -45,7 +45,7 @@ class MolGroup:
         for mol in self.mol_group:
             yield mol
 
-    def iter_idx_list(self, batch_size: int) -> List[int]:
+    def iter_idx_list(self, batch_size: int) -> Generator[List[int]]:
         real_batch_size = math.ceil(len(self.mol_group) / math.ceil(len(self.mol_group) / batch_size))
         batch_id_list = [list(range(i, min(len(self.mol_group), i + real_batch_size))) for i in range(0, len(self.mol_group), real_batch_size)]
         for sub_id_list in batch_id_list:
