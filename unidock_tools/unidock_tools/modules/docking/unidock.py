@@ -3,7 +3,6 @@ from pathlib import Path
 import logging
 import os
 import shutil
-import glob
 import subprocess
 import math
 
@@ -26,6 +25,7 @@ class UniDockRunner:
                  search_mode: str = "",
                  exhaustiveness: int = 256,
                  max_step: int = 10,
+                 energy_range: float = 3.0,
                  refine_step: int = 5,
                  score_only: bool = False,
                  local_only: bool = False
@@ -73,6 +73,7 @@ class UniDockRunner:
             "--size_z", str(size_z),
             "--scoring", scoring,
             "--num_modes", str(num_modes),
+            "--energy_range", str(energy_range),
             "--refine_step", str(refine_step),
             "--verbosity", "2",
             "--keep_nonpolar_H",
@@ -231,6 +232,7 @@ def run_unidock(
         search_mode: str = "",
         exhaustiveness: int = 256,
         max_step: int = 10,
+        energy_range: float = 3.0,
         refine_step: int = 5,
         score_only: bool = False,
         local_only: bool = False,
@@ -242,7 +244,8 @@ def run_unidock(
         output_dir=output_dir,
         scoring=scoring, num_modes=num_modes,
         search_mode=search_mode,
-        exhaustiveness=exhaustiveness, max_step=max_step, refine_step=refine_step,
+        exhaustiveness=exhaustiveness, max_step=max_step,
+        energy_range=energy_range, refine_step=refine_step,
         score_only=score_only, local_only=local_only,
     )
     result_ligands = runner.run()
