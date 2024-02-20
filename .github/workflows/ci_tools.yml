@@ -6,7 +6,6 @@ on:
     branches: [ main ]
 
 env:
-  BASE_IMAGE_VERSION: "0.0.1"
   PYTHON_VERSION: "3.11"
 
 jobs:
@@ -19,7 +18,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: $PYTHON_VERSION
+        python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Install dependencies
       run: |
@@ -39,7 +38,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: $PYTHON_VERSION
+        python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Install dependencies
       run: |
@@ -60,7 +59,7 @@ jobs:
       matrix:
         cuda-version: ["12.0.0"]
     container:
-      image: docker.io/xmyyn/unidock_tools_base:$BASE_IMAGE_VERSION_cuda${{ matrix.cuda-version }}
+      image: docker.io/xmyyn/unidock_tools_base:0.0.1_cuda${{ matrix.cuda-version }}
       options: --gpus all
     steps:
     - name: checkout repo
@@ -129,7 +128,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         platforms: linux/amd64
-        build-args: BASE_IMAGE=xmyyn/unidock_tools_base:$BASE_IMAGE_VERSION_cuda${{ matrix.cuda-version }}
+        build-args: BASE_IMAGE=xmyyn/unidock_tools_base:0.0.1_cuda${{ matrix.cuda-version }}
         tags: dptechnology/unidock_tools:${{ steps.short-sha.outputs.sha }},dptechnology/unidock_tools:latest
         file: unidock_tools/containers/Dockerfile
         push: ${{ github.event_name == 'push' }}
