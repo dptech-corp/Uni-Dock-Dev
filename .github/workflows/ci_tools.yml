@@ -106,7 +106,7 @@ jobs:
 
     - name: log in to docker hub
       uses: docker/login-action@v3
-      if: github.event_name == 'push'
+      if: github.event_name == 'pull_request'
       with:
         username: dptechnology
         password: ${{ secrets.DOCKERHUB_PAT }}
@@ -132,4 +132,4 @@ jobs:
         build-args: BASE_IMAGE=xmyyn/unidock_tools_base:0.0.1_cuda${{ matrix.cuda-version }}
         tags: dptechnology/unidock_tools:${{ steps.short-sha.outputs.sha }},dptechnology/unidock_tools:latest
         file: unidock_tools/containers/Dockerfile
-        push: ${{ github.event_name == 'push' }}
+        push: ${{ github.event_name == 'pull_request' }}
