@@ -27,7 +27,7 @@ jobs:
 
     - name: Run flake8 formating
       run: |
-        flake8 unidock_tools/unidock_tools --exit-zero
+        flake8 unidock_tools/unidock_tools
 
   pyright:
     continue-on-error: true
@@ -68,6 +68,7 @@ jobs:
     - name: install unidock
       working-directory: ./unidock
       run: |
+        apt-get install -y ninja-build
         mkdir build
         cd build
         cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
