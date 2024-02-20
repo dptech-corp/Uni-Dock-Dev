@@ -76,7 +76,7 @@ jobs:
         cmake --install .
         cd ..
 
-    -name: check env
+    - name: check env
       run: |
         unidock --version
         confgen --version
