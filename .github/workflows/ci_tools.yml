@@ -1,11 +1,9 @@
 name: Uni-Dock Tools CI/CD
 on:
   push:
-    branches:
-      - '**ci**'
+    branches: []
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 env:
   BASE_IMAGE_VERSION: "0.0.1"
