@@ -63,7 +63,7 @@ jobs:
       if: github.event_name == 'push'
       with:
         username: dptechnology
-        password: ${{ secrets.DOCKERHUB_PAT }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: set up docker buildx
       id: buildx
