@@ -7,17 +7,19 @@ import pytest
 
 @pytest.fixture
 def receptor():
-    return Path(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "inputs", "1bcu_protein.pdb"))
+    return Path(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                             "inputs", "1iep_protein.pdbqt"))
 
 
 @pytest.fixture
 def ligand():
-    return Path(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "inputs", "1bcu_ligand.sdf"))
+    return Path(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                             "inputs", "1iep_ligand_prep.sdf"))
 
 
 @pytest.fixture
 def pocket():
-    return [5.0, 15.0, 50.0, 15, 15, 15]
+    return [15.11, 53.98, 17.14, 19.23, 27.64, 24.19]
 
 
 def test_run_unidock_vina(receptor, ligand, pocket):
