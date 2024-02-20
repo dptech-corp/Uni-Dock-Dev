@@ -58,12 +58,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+    - uses: actions/checkout@v4
+
     - name: log in to docker hub
       uses: docker/login-action@v3
       if: github.event_name == 'push'
       with:
         username: dptechnology
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        password: ${{ secrets.DOCKERHUB_PAT }}
 
     - name: set up docker buildx
       id: buildx
