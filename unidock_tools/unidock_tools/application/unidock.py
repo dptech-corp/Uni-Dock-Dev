@@ -1,5 +1,5 @@
+from typing import List, Tuple, Union, Iterator
 import copy
-from typing import List, Tuple, Union
 from pathlib import Path
 import os
 import time
@@ -105,7 +105,7 @@ class UniDock(Base):
             yield input_list, input_dir
 
     @time_logger
-    def postprocessing(self, ligand_scores_list: List[Tuple[Path, List[float]]],
+    def postprocessing(self, ligand_scores_list: zip,
                        topn_conf: int = 10,
                        score_name: str = "score"):
         mol_score_dict = dict()

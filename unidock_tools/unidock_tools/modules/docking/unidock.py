@@ -39,7 +39,7 @@ class UniDockRunner:
         cmd = ["unidock"]
         if scoring.lower() == "ad4":
             map_prefix = self.gen_ad4_map(
-                receptor, ligands,
+                Path(receptor), ligands,
                 center_x, center_y, center_z,
                 size_x, size_y, size_z,
             )
