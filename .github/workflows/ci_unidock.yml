@@ -61,7 +61,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: log in to docker hub
-      uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
+      uses: docker/login-action@master
       if: github.event_name == 'push'
       with:
         username: dptechnology
