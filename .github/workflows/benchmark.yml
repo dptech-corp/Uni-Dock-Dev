@@ -28,3 +28,13 @@ jobs:
           cd scripts
           python3 test_molecular_docking.py
           python3 test_virtual_screening.py
+      - name: Upload docking results
+        uses: actions/upload-artifact@v4
+        with:
+          name: docking.csv
+          path: results/results.csv
+      - name: Upload screening results
+        uses: actions/upload-artifact@v4
+        with:
+          name: screening.csv
+          path: results/metrics.csv
