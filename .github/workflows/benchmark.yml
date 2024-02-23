@@ -23,18 +23,25 @@ jobs:
         run: |
           apt update && apt install -y wget unzip
           pip install -r scripts/requirements.txt
-      - name: Run benchmarks
+      - name: Run molecular docking benchmarks
         run: |
-          cd scripts
           python3 test_molecular_docking.py
-          python3 test_virtual_screening.py
       - name: Upload docking results
         uses: actions/upload-artifact@v4
         with:
-          name: docking.csv
+          name: molecular_docking_results.csv
           path: results/results.csv
-      - name: Upload screening results
+      - name: Upload docking metrics
         uses: actions/upload-artifact@v4
         with:
-          name: screening.csv
+          name: molecular_docking_metrics.csv
           path: results/metrics.csv
+      - name: Run virtual screening benchmarks
+        run: |
+          rm -rf results
+          python3 test_virtual_screening.py
+      - name: Upload vs results
+        uses: actions/upload-artifact@v4
+        with:
+          name: virtual_screening_results.csv
+          path: results/results.csv
