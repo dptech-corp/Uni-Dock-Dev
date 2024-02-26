@@ -55,6 +55,13 @@ add_library(lib OBJECT
 	src/lib/ad4cache.cpp src/lib/cache.cpp src/lib/non_cache.cpp src/lib/conf_independent.cpp src/lib/coords.cpp src/lib/grid.cpp src/lib/szv_grid.cpp src/lib/model.cpp src/lib/mutate.cpp src/lib/parallel_mc.cpp src/lib/parse_pdbqt.cpp src/lib/quasi_newton.cpp src/lib/quaternion.cpp src/lib/random.cpp src/lib/utils.cpp src/lib/vina.cpp src/lib/precalculate.h)
 	# src/lib/monte_carlo
 # set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/cuda)
+include_directories(${CMAKE_SOURCE_DIR}/unitest)
+file(GLOB_RECURSE TEST_SOURCES "${CMAKE_SOURCE_DIR}/unitest/*.cpp")
+add_executable(unit_tests ${TEST_SOURCES})
+target_link_libraries(unit_tests Boost::system Boost::thread Boost::serialization Boost::filesystem Boost::program_options Boost::timer)
+target_link_libraries(unit_tests OpenMP::OpenMP_CXX)
+target_link_libraries(unit_tests lib)
+
 add_library(cuda OBJECT src/lib/monte_carlo.h src/cuda/monte_carlo.cu src/cuda/precalculate.cu)
 target_link_libraries(${VINA_BIN_NAME} cuda lib)
 target_include_directories(${VINA_BIN_NAME} PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}) # For detecting CUDA memory size
