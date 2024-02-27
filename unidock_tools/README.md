@@ -1,15 +1,11 @@
 # Introduction
 
-To make Uni-Dock more user-friendly and compatible with more ligand input formats and scoring functions, we have introduced **UniDockTools**.
-Now, UniDockTools has two new functions:
+Based on Uni-Dock, we have developed several user-friendly and enhanced applications in **UniDockTools**.
+Main features are:
 
-- support SDF format
+- support PDB format receptor and SDF format ligands
 
-  UniDockTools has a built-in molecular preparation function, so users can use the original SDF files as the input for ligand files, provided that the compound structures in the original SDF files are reasonable.
-
-- support gnina CNNscores
-
-  Gnina CNNscores is a scoring function known for its outstanding screening performance. UniDockTools offers a workflow for Uni-Dock to generate ligand conformations and subsequently re-score them using Gnina CNNscores.
+- MCDock: 
 
 # Installation
 
@@ -19,7 +15,7 @@ To install UniDock, please follow [Uni-Dock installation docs](../unidock/README
 
 To install UniDockTools, please execute the following command in `Uni-Dock/unidock_tools` directory:
 
-```python setup.py install```
+```pip install .```
 
 ## 2. Install MGLTools
 
@@ -27,14 +23,6 @@ If you want ro run Uni-Dock with receptor in PDB format, you need to install `mg
 
 ```conda create -n mgltools mgltools -c bioconda```
 
-## 3. Install gnina
-
-If you want to use gnina CNNscores to rescore docking poses, you should install gnina.
-
-- binary
-install gnina by download binary file from [gnina's release page](https://github.com/gnina/gnina/releases)
-- source code
-install gnina from source code according to [gnina installation document](https://github.com/gnina/gnina#installation)
 
 # Usage
 
