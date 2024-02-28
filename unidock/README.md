@@ -203,7 +203,7 @@ If you want to use search mode presets, specify the parameter `search_mode` in `
 
 ## Contributing
 
-We warmly welcome contributions from the open-source community. Your bug reports, feature requests, and pull requests helps Uni-Dock improve.
+We warmly welcome contributions from the open source community. Your bug reports, feature requests, and pull requests helps Uni-Dock improve.
 
 Please submit bug reports and feature requests to the Github [issue tracker](https://github.com/dptech-corp/Uni-Dock/issues/new/choose).
 
