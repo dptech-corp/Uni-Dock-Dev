@@ -3,9 +3,9 @@
 Based on Uni-Dock, we have developed several user-friendly and enhanced applications in **Uni-Dock Tools**.
 Main features are:
 
-- Individual receptor and ligand format-convert applications
+- Individual receptor and ligand preparation applications
 
-- End-to-End Uni-Dock pipeline starting from PDB format receptor and SDF format ligands
+- End-to-End Uni-Dock pipeline starting from common formats receptor and ligands
 
 - Multi-Conformation Docking (mcdock): See [MCDock Introduction](./MCDOCK.md#introduction)
 
@@ -36,17 +36,13 @@ And run the docker container using the following command:
 
 # Applications
 
-## 1. Multi-Conformation Docking (mcdock)
-
-See [MCDock Usage](./MCDOCK.md#usage)
-
-## 2. ProteinPrep
+## 1. ProteinPrep
 
 Prepare and Convert PDB-format receptor protein into PDBQT format
 
 `unidocktools proteinprep -r <Input PDB File> -o <Output PDBQT File Path>`
 
-## 3. LigandPrep
+## 2. LigandPrep
 
 Prepare ligands to be used in Uni-Dock
 
@@ -56,7 +52,7 @@ or write a list of ligand files in a text file and use the following command:
 
 `unidocktools ligandprep -i <Txt File> -sd <output_dir>`
 
-## 4. Uni-Dock Pipeline
+## 3. Uni-Dock Pipeline
 
 End-to-End pipeline to run Uni-Dock with common-format receptor and ligands
 
@@ -89,6 +85,10 @@ End-to-End pipeline to run Uni-Dock with common-format receptor and ligands
 #### Others
 - `-wd, --workdir`: Working directory (default: 'unidock_workdir').
 - `-bs, --batch_size`: Batch size (default: 20).
+
+## 4. Multi-Conformation Docking (mcdock)
+
+See [MCDock Usage](./MCDOCK.md#usage)
 
 # License
 
