@@ -1,23 +1,23 @@
 # Introduction
 
-To make Uni-Dock more user-friendly and compatible with more ligand input formats and scoring functions, we have introduced **UniDockTools**.
-Now, UniDockTools has two new functions:
+To make Uni-Dock more user-friendly and compatible with more ligand input formats and scoring functions, we have introduced **Uni-Dock Tools**.
+Now, Uni-Dock Tools has two new functions:
 
 - support SDF format
 
-  UniDockTools has a built-in molecular preparation function, so users can use the original SDF files as the input for ligand files, provided that the compound structures in the original SDF files are reasonable.
+  Uni-Dock Tools has a built-in molecular preparation function, so users can use the original SDF files as the input for ligand files, provided that the compound structures in the original SDF files are reasonable.
 
 - support gnina CNNscores
 
-  Gnina CNNscores is a scoring function known for its outstanding screening performance. UniDockTools offers a workflow for Uni-Dock to generate ligand conformations and subsequently re-score them using Gnina CNNscores.
+  Gnina CNNscores is a scoring function known for its outstanding screening performance. Uni-Dock Tools offers a workflow for Uni-Dock to generate ligand conformations and subsequently re-score them using Gnina CNNscores.
 
 # Installation
 
-## 1. Install Uni-Dock and UniDockTools
+## 1. Install Uni-Dock and Uni-Dock Tools
 
-To install UniDock, please follow [Uni-Dock installation docs](../unidock/README.md).
+To install Uni-Dock, please follow [Uni-Dock installation docs](../unidock/README.md).
 
-To install UniDockTools, please execute the following command in `Uni-Dock/unidock_tools` directory:
+To install Uni-Dock Tools, please execute the following command in `Uni-Dock/unidock_tools` directory:
 
 ```python setup.py install```
 
@@ -38,7 +38,7 @@ install gnina from source code according to [gnina installation document](https:
 
 # Usage
 
-By installing UniDockTools, you have obtained an executable file called **Unidock** (note the capitalized U), which you can use just like running **unidock**.
+By installing Uni-Dock Tools, you have obtained an executable file called **Unidock** (note the capitalized U), which you can use just like running **unidock**.
 
 ## Input ligands with origin sdf format
 

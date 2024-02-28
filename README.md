@@ -16,17 +16,17 @@ Check this [subfolder](./unidock/) for instructions on installing Uni-Dock.
 
 **Uni-Dock** joins the DeepModeling community, a community devoted of AI for science, as an incubating level project. To learn more about the DeepModeling community, see the [introduction of community](https://github.com/deepmodeling/community).
 
-## UniDockTools
+## Uni-Dock Tools
 
-**UniDockTools** is a python package developed to handle the inputs and outputs of Uni-Dock.
-In the future, UniDockTools will support more input formats and scoring functions. We hope it could be an easy-to-use virtual screening workflow for all users.
+**Uni-Dock Tools** is a python package developed to handle the inputs and outputs of Uni-Dock.
+In the future, Uni-Dock Tools will support more input formats and scoring functions. We hope it could be an easy-to-use virtual screening workflow for all users.
 
 Check this [subfolder](./unidock_tools/) for more details.
 
 ## Changelog
 
 - 2023-08-21: Upload source codes of Uni-Dock.
-- 2023-08-14: Add unidock_tools to support SDF format input for vina and vinardo scoring functions.
+- 2023-08-14: Add Uni-Dock Tools to support SDF format input for vina and vinardo scoring functions.
 
 ## Citation
 
