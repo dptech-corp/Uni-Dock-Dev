@@ -1,48 +1,94 @@
 # Introduction
 
-Based on Uni-Dock, we have developed several user-friendly and enhanced applications in **UniDockTools**.
+Based on Uni-Dock, we have developed several user-friendly and enhanced applications in **Uni-Dock Tools**.
 Main features are:
 
-- support PDB format receptor and SDF format ligands
+- Individual receptor and ligand format-convert applications
 
-- MCDock: 
+- End-to-End Uni-Dock pipeline starting from PDB format receptor and SDF format ligands
+
+- Multi-Conformation Docking (mcdock): See [MCDock Introduction](./MCDOCK.md#introduction)
 
 # Installation
 
-## 1. Install Uni-Dock and UniDockTools
+## Dependency
 
-To install UniDock, please follow [Uni-Dock installation docs](../unidock/README.md).
+- Uni-Dock
+- Python >= 3.6
+- RDKit
+- networkx
+- MGLTools, if you want to use AD4 scoring function in Uni-Dock
+- mcdock dependencies, see [MCDock Installation](./MCDOCK.md#installation)
 
-To install UniDockTools, please execute the following command in `Uni-Dock/unidock_tools` directory:
+## Install
 
-```pip install .```
+- ```pip install .```
 
-## 2. Install MGLTools
+## Docker
 
-If you want ro run Uni-Dock with receptor in PDB format, you need to install `mgltools`. Please use the command below:
+ We provide docker image with all the dependencies installed. You can pull the docker image from the following link:
 
-```conda create -n mgltools mgltools -c bioconda```
+```docker pull dptechnology:unidocktools```
 
+And run the docker container using the following command:
 
-# Usage
+```docker run --gpus 0 -it -v $(pwd):/workpsace unidocktools:v1.0.0 cd /workspace &&  <Your command>```
 
-By installing UniDockTools, you have obtained an executable file called **Unidock** (note the capitalized U), which you can use just like running **unidock**.
+# Applications
 
-## Input ligands with origin sdf format
+## 1. Multi-Conformation Docking (mcdock)
 
-`Unidock --receptor receptor.pdbqt --gpu_batch ligand1.sdf ligand2.sdf --center_x 9 --center_y -5  --center_z -5 --size_x 20  --size_y 20 --size_z 20 --search_mode balance  --dir .`
+See [MCDock Usage](./MCDOCK.md#usage)
 
-## Use gnina CNNscores to rescore docking poses
+## 2. ProteinPrep
 
-`Unidock --receptor receptor.pdbqt --gpu_batch ligand1.sdf ligand2.sdf  --scoring gnina --center_x 9 --center_y -5  --center_z -5 --size_x 20  --size_y 20 --size_z 20 --search_mode balance  --dir .`
+Prepare and Convert PDB-format receptor protein into PDBQT format
 
-## Use ligands structure as bias
+`unidocktools proteinprep -r <Input PDB File> -o <Output PDBQT File Path>`
 
-`Unidock --receptor receptor.pdbqt --gpu_batch ligand1.sdf ligand2.sdf --reference ref1.sdf ref2.sdf --scoring gnina --center_x 9 --center_y -5  --center_z -5 --size_x 20  --size_y 20 --size_z 20 --search_mode balance  --dir . `
+## 3. LigandPrep
 
-## Other usage
+Prepare ligands to be used in Uni-Dock
 
-  To lower users' learning cost, the other usage methods of **Unidock** remain consistent with the usage of **unidock**.
+`unidocktools ligandprep -l <Input SDF ligand files, use commas to seperate> -sd <output_dir> -bs <batch_size=1200>`
+
+or write a list of ligand files in a text file and use the following command:
+
+`unidocktools ligandprep -i <Txt File> -sd <output_dir>`
+
+## 4. Uni-Dock Pipeline
+
+End-to-End pipeline to run Uni-Dock with common-format receptor and ligands
+
+`unidocktools unidock_pipeline -r <receptor file> -l <ligand files> -sd <output_dir> -cx <center_x> -cy <center_y> -cz <center_z>`
+
+### Parameters
+
+#### IO Parameters
+- `-r, --receptor`: Path to the receptor file in PDBQT format.
+- `-l, --ligands`: Path to the ligand file in SDF format. For multiple files, separate them by commas.
+- `-i, --ligand_index`: A text file containing the path of ligand files in sdf format.
+- `-sd, --savedir`: Save directory (default: 'unidock_results').
+
+#### Pocket Parameters
+- `-cx, --center_x`: X-coordinate of the docking box center.
+- `-cy, --center_y`: Y-coordinate of the docking box center.
+- `-cz, --center_z`: Z-coordinate of the docking box center.
+- `-sx, --size_x`: Width of the docking box in the X direction (default: 22.5).
+- `-sy, --size_y`: Width of the docking box in the Y direction (default: 22.5).
+- `-sz, --size_z`: Width of the docking box in the Z direction (default: 22.5).
+
+#### Docking Parameters
+- `-sf, --scoring_function`: Scoring function (default: 'vina').
+- `-ex, --exhaustiveness`: exhaustiveness (default: 128).
+- `-ms, --max_step`: max_step (default: 20)
+- `-nm, --num_modes`: Number of poses to output (default: 3).
+- `-rs, --refine_step`: Refine step (default: 3).
+- `-topn, --topn`: Top N pose results to keep (default: 100).
+
+#### Others
+- `-wd, --workdir`: Working directory (default: 'unidock_workdir').
+- `-bs, --batch_size`: Batch size (default: 20).
 
 # License
 
