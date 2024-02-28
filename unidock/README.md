@@ -9,7 +9,13 @@ The [paper](https://pubs.acs.org/doi/10.1021/acs.jctc.2c01145) has been accepted
 
 ## Changelog
 
-- 2023-08-14: Add `unidock_tools` to support SDF format input for vina and vinardo scoring functions.
+Major changes are documented. For the detailed changes, please refer to the commit history.
+
+### v1.1
+
+- Optimize 1:1 ligand docking.
+- Optimize Monte-Carlo simulation speed.
+- Generate compute kernels for various ligands sizes.
 
 ## License
 
@@ -57,7 +63,7 @@ The performance is not guaranteed on legacy GPU models. To build Uni-Dock with a
                            # Otherwise, prepend the building directory to your `PATH` environment variable.
      ```
 
-code foramt
+To format codes if changes are made:
 
 ```shell
 cd ./build/
@@ -195,9 +201,13 @@ python run_dock.py
 
 If you want to use search mode presets, specify the parameter `search_mode` in `config.json` and delete `nt` and `ns` in `config.json`.
 
-## Bug Report
+## Contributing
 
-Please report bugs to [Issues](https://github.com/dptech-corp/Uni-Dock/issues) page.
+We warmly welcome contributions from the open-source community. Your bug reports, feature requests, and pull requests helps Uni-Dock improve.
+
+Please submit bug reports and feature requests to the Github [issue tracker](https://github.com/dptech-corp/Uni-Dock/issues/new/choose).
+
+If you would like to improve the codes, please refer to the [contributing guide](../.github/CONTRIBUTING.md) for details.
 
 ## Ackowledgement
 

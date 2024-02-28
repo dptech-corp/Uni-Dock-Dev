@@ -3,6 +3,7 @@
 <picture><source media="(prefers-color-scheme: dark)" srcset="./unidock/assets/logo-dark.svg"><source media="(prefers-color-scheme: light)" srcset="./unidock/assets/logo.svg"><img alt="Uni-Dock logo" src="./unidock/assets/logo.svg"></picture>
 
 [![DeepModeling](https://img.shields.io/badge/DeepModeling-Incubating_Project-blue)](https://github.com/deepmodeling)
+
 ## Introduction
 
 **Uni-Dock** is a GPU-accelerated molecular docking program developed by DP Technology.
@@ -14,6 +15,7 @@ The [paper](https://pubs.acs.org/doi/10.1021/acs.jctc.2c01145) has been accepted
 Check this [subfolder](./unidock/) for instructions on installing Uni-Dock.
 
 **Uni-Dock** joins the DeepModeling community, a community devoted of AI for science, as an incubating level project. To learn more about the DeepModeling community, see the [introduction of community](https://github.com/deepmodeling/community).
+
 ## UniDockTools
 
 **UniDockTools** is a python package developed to handle the inputs and outputs of Uni-Dock.
