@@ -67,16 +67,16 @@ add_library(lib OBJECT
 include_directories(${CMAKE_SOURCE_DIR}/unittest)
 file(GLOB_RECURSE TEST_SOURCES ${CMAKE_SOURCE_DIR}/unittest/*.cpp ${CMAKE_SOURCE_DIR}/unittest/*.hpp)
 add_executable(unit_tests ${TEST_SOURCES})
-target_link_libraries(unit_tests Boost::system Boost::thread Boost::serialization Boost::filesystem Boost::program_options Boost::timer)
-target_link_libraries(unit_tests OpenMP::OpenMP_CXX)
-target_link_libraries(unit_tests lib )
-target_link_libraries(unit_tests Catch2::Catch2WithMain)
+
 
 add_library(cuda OBJECT src/lib/monte_carlo.h src/cuda/monte_carlo.cu src/cuda/precalculate.cu)
 target_link_libraries(${VINA_BIN_NAME} cuda lib)
 target_include_directories(${VINA_BIN_NAME} PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}) # For detecting CUDA memory size
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${VINA_BIN_NAME} TYPE BIN)
-
+target_link_libraries(unit_tests Boost::system Boost::thread Boost::serialization Boost::filesystem Boost::program_options Boost::timer)
+target_link_libraries(unit_tests OpenMP::OpenMP_CXX)
+target_link_libraries(unit_tests lib cuda)
+target_link_libraries(unit_tests Catch2::Catch2WithMain)
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS src/*.cpp src/*.h src/*.cu)
 set(CLANG_FORMAT clang-format)
 
